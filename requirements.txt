@@ -1,0 +1,34 @@
+Flask
+python-dotenv
+shortuuid
+gunicorn
+
+requests
+ipython
+jupyter
+jupyterlab
+
+numpy
+torch
+torchvision
+psutil
+# diffusers
+safetensors
+datasets
+transformers
+accelerate
+evaluate
+omegaconf
+ftfy
+# pyarrow
+wandb
+tensorboard
+matplotlib
+open-clip-torch
+fastcore
+scipy
+# pysocks
+# controlnet-aux
+opencv-contrib-python
+xforms
+bitsandbytes

@@ -1,0 +1,312 @@
+
+### root
+GET {{base}}/
+Accept: application/json
+
+
+### check_mem_all
+
+GET {{base}}/check_mem_all/available?unit=G
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### check_mem
+
+GET {{base}}/check_mem/0?unit=G
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### prepare_task
+
+POST {{base}}/prepare_task
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task": {
+    "task_id": "6543",
+    "instance_images": [
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png"
+    ]
+  }
+}
+
+
+### launch
+
+POST {{base}}/launch
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task": {
+    "task_id": "6543",
+    "instance_images": [
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2nxuaqnhcq8s10letfc2vjoyswjyu68u.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/hh1m9xy27uosqn2e6s81d5vbopwyyixx.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/3u7ppqtkcx4p6qri9fnw74azzxpwnagk.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/i04354mp1ikcbz9c4yeqt29occcw23lk.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2wbqklkav4xr3kczqgncg7rl7hlrd7e0.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2v0w65sxuy3zhhdyf0c5d0ddam3cu5j4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/xtrvk2d02gygn6s5gb7x2vodlp4fgp5o.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/19w6tsztk4zt4y769tom6noxiqwwbr6t.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/29vzoievmoiwwyipnc87f8hgzcpn49j8.jpg"
+    ]
+  },
+  "launch": {
+    "shell": false,
+    "wrap_proxy": true,
+    "proxy_command": "proxychains4 -q",
+    "hf_hub_offline": true,
+    "hf_accelerate": true,
+    "skip_download_dataset_if_exists": true,
+    "accelerate": {
+      "mixed_precision": "fp16"
+    }
+  },
+  "train": {
+    "pretrained_model_name_or_path": "runwayml/stable-diffusion-v1-5",
+    "instance_prompt": "a photo of sks dog",
+    "max_train_steps": 40,
+    "learning_rate": "2e-6",
+    "with_prior_preservation": true,
+    "class_prompt": "a photo of dog",
+    "num_class_images": 20,
+    "mixed_precision": "fp16",
+    "prior_generation_precision": "fp16",
+    "xformers_attention": true,
+    "use_8bit_adam": true,
+    "train_batch_size": 2,
+    "gradient_accumulation_steps": 4
+  }
+}
+
+
+### launch - cuda - 24G
+
+POST {{base}}/launch
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+{
+  "task": {
+    "task_id": "222",
+    "user_id": "9NYzoSGc6l3GMYS6",
+    "train_type": "live",
+    "instance_images": [
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2nxuaqnhcq8s10letfc2vjoyswjyu68u.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/hh1m9xy27uosqn2e6s81d5vbopwyyixx.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/3u7ppqtkcx4p6qri9fnw74azzxpwnagk.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/i04354mp1ikcbz9c4yeqt29occcw23lk.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2wbqklkav4xr3kczqgncg7rl7hlrd7e0.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2v0w65sxuy3zhhdyf0c5d0ddam3cu5j4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/xtrvk2d02gygn6s5gb7x2vodlp4fgp5o.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/19w6tsztk4zt4y769tom6noxiqwwbr6t.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/29vzoievmoiwwyipnc87f8hgzcpn49j8.jpg"
+    ]
+  },
+  "launch": {
+    "accelerate": {
+      "gpu_ids": "8"
+    },
+    "wrap_proxy": true,
+    "proxy_command": "proxychains4 -q",
+    "hf_hub_offline": true,
+    "hf_accelerate": true,
+    "dataset_version": 1,
+    "skip_download_dataset_if_exists": true
+  },
+  "train": {
+    "basic": {
+      "pretrained_model_name_or_path": null,
+      "base_model_name": "dreamshaper_8",
+      "base_model_file_name": null,
+      "instance_prompt": "a photo of tishi man",
+      "xformers_attention": true,
+      "mixed_precision": "fp16",
+      "use_8bit_adam": true,
+      "train_batch_size": 1,
+      "sample_batch_size": 4,
+      "gradient_accumulation_steps": 1,
+      "max_train_steps": 100
+    },
+    "prior": {
+      "with_prior_preservation": true,
+      "prior_generation_precision": "fp16",
+      "num_class_images": 20,
+      "class_prompt": "a photo of a man"
+    },
+    "token": {
+      "train_text_encoder": true
+    },
+    "validation": {
+      "validation_steps": 200
+    },
+    "lr": {
+      "lr_warmup_steps": 0
+    }
+  }
+}
+
+
+### launch - mac
+
+POST {{base}}/task/launch
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task": {
+    "task_id": "aaa",
+    "instance_images": [
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png"
+    ]
+  },
+  "launch": {
+    "shell": false,
+    "wrap_proxy": false,
+    "hf_hub_offline": true,
+    "hf_accelerate": true,
+    "skip_download_dataset_if_exists": true,
+    "accelerate": {
+    }
+  },
+  "train": {
+    "pretrained_model_name_or_path": "runwayml/stable-diffusion-v1-5",
+    "instance_prompt": "a photo of sks dog",
+    "max_train_steps": 40,
+    "learning_rate": "2e-6",
+    "with_prior_preservation": true,
+    "class_prompt": "a photo of dog",
+    "num_class_images": 20,
+    "train_batch_size": 2,
+    "gradient_accumulation_steps": 4
+  }
+}
+
+
+### task - status
+
+POST {{base}}/task/aaa/status
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "root_pid": "94171"
+}
+
+
+### task - generate_single
+
+POST {{base}}/task/aaa/generate_single
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### prepare_base_hf
+
+POST {{base}}/prepare_base_hf
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4",
+  "ext": "safetensors"
+}
+
+
+### task - list test_images
+
+GET {{base}}/task/aaa/_/test_images
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### task - get test_image file
+
+GET {{base}}/task/aaa/2023-10-31/test_images/2-fb04f6d452773a06dc738922f748f50b57d468a3.jpg
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### task - get test_image
+
+GET {{base}}/task/aaa/_/test_images/1-1d2082ea7f2349bc398a7ab83123708fa9e9274a.jpg/b64
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### task - release model
+
+POST {{base}}/task/aaa/release
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4"
+}
+
+
+### task - undo-release model
+
+POST {{base}}/task/aaa/undo-release
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4"
+}
+
+
+### task - check_tokens
+
+POST {{base}}/check-tokens
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "text": "checkTokens"
+}
+
+
+### sync-checkpoint
+
+POST {{base}}/sync-checkpoint
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "model_file": "shitong-man"
+}
+
+
+

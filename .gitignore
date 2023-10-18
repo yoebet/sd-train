@@ -1,0 +1,12 @@
+/.idea/
+.ipynb_checkpoints/
+/data/
+/diffusers/
+/venv/
+/.env.local
+/http/http-client.private.env.json
+.DS_Store
+__pycache__/
+nohup.out*
+out/
+wandb/

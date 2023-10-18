@@ -1,0 +1,11 @@
+GET {{base}}
+Accept: application/json
+
+###
+
+GET {{base}}/tasks/123
+Accept: application/json
+Authorization: {{auth}}
+
+###
+

@@ -31,6 +31,7 @@ def launch(config, task_params, train_params,
     launch_script_dir = config.get('LAUNCH_SCRIPT_DIR', '.')
 
     task_id = task_params.get('task_id', None)
+    hf_local_files_only = task_params.get('hf_local_files_only', False)
     # user_id = task_params.get('user_id', None)
     # live/object/style
     # train_type = task_params.get('train_type', None)
@@ -80,7 +81,9 @@ def launch(config, task_params, train_params,
     def preexec_function():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    p = subprocess.Popen(args, preexec_fn=preexec_function)
+    p = subprocess.Popen(args,
+                         preexec_fn=preexec_function,
+                         env={'HF_HUB_OFFLINE': 'true' if hf_local_files_only else ''})
 
     return p.pid
 

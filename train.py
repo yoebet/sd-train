@@ -139,7 +139,6 @@ def log_validation(
         unet=accelerator.unwrap_model(unet),
         revision=args.revision,
         torch_dtype=weight_dtype,
-        local_files_only=args.hf_local_files_only,
         **pipeline_args,
     )
 
@@ -206,7 +205,6 @@ def import_model_class_from_model_name_or_path(pretrained_model_name_or_path: st
         pretrained_model_name_or_path,
         subfolder="text_encoder",
         revision=revision,
-        local_files_only=args.hf_local_files_only,
     )
     model_class = text_encoder_config.architectures[0]
 
@@ -244,12 +242,6 @@ def parse_args(input_args=None):
             "Revision of pretrained model identifier from huggingface.co/models. Trainable model components should be"
             " float32 precision."
         ),
-    )
-    parser.add_argument(
-        "--hf_local_files_only",
-        action="store_true",
-        default=False,
-        help="from_pretrained: local_files_only",
     )
     parser.add_argument(
         "--tokenizer_name",
@@ -871,7 +863,6 @@ def main(args):
                 torch_dtype=torch_dtype,
                 safety_checker=None,
                 revision=args.revision,
-                local_files_only=args.hf_local_files_only,
             )
             pipeline.set_progress_bar_config(disable=True)
 
@@ -916,7 +907,6 @@ def main(args):
             args.tokenizer_name,
             revision=args.revision,
             use_fast=False,
-            local_files_only=args.hf_local_files_only,
         )
     elif args.pretrained_model_name_or_path:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -924,7 +914,6 @@ def main(args):
             subfolder="tokenizer",
             revision=args.revision,
             use_fast=False,
-            local_files_only=args.hf_local_files_only,
         )
 
     # import correct text encoder class
@@ -934,13 +923,11 @@ def main(args):
     noise_scheduler = DDPMScheduler.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="scheduler",
-        local_files_only=args.hf_local_files_only,
     )
     text_encoder = text_encoder_cls.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="text_encoder",
         revision=args.revision,
-        local_files_only=args.hf_local_files_only,
     )
 
     if model_has_vae(args):
@@ -948,7 +935,6 @@ def main(args):
             args.pretrained_model_name_or_path,
             subfolder="vae",
             revision=args.revision,
-            local_files_only=args.hf_local_files_only,
         )
     else:
         vae = None
@@ -957,7 +943,6 @@ def main(args):
         args.pretrained_model_name_or_path,
         subfolder="unet",
         revision=args.revision,
-        local_files_only=args.hf_local_files_only,
     )
 
     # create custom saving & loading hooks so that `accelerator.save_state(...)` serializes in a nice format
@@ -980,7 +965,6 @@ def main(args):
                 load_model = text_encoder_cls.from_pretrained(
                     input_dir,
                     subfolder="text_encoder",
-                    local_files_only=args.hf_local_files_only,
                 )
                 model.config = load_model.config
             else:
@@ -988,7 +972,6 @@ def main(args):
                 load_model = UNet2DConditionModel.from_pretrained(
                     input_dir,
                     subfolder="unet",
-                    local_files_only=args.hf_local_files_only,
                 )
                 model.register_to_config(**load_model.config)
 
@@ -1422,7 +1405,6 @@ def main(args):
             args.pretrained_model_name_or_path,
             unet=accelerator.unwrap_model(unet),
             revision=args.revision,
-            local_files_only=args.hf_local_files_only,
             **pipeline_args,
         )
 

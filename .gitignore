@@ -1,3 +1,7 @@
 .idea/
 data/
 diffusers/
+venv/
+.DS_Store
+__pycache__/
+nohup.out

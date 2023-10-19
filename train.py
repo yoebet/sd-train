@@ -56,7 +56,6 @@ from diffusers.training_utils import compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 
-
 if is_wandb_available():
     import wandb
 
@@ -67,13 +66,13 @@ logger = get_logger(__name__)
 
 
 def save_model_card(
-    repo_id: str,
-    images=None,
-    base_model=str,
-    train_text_encoder=False,
-    prompt=str,
-    repo_folder=None,
-    pipeline: DiffusionPipeline = None,
+        repo_id: str,
+        images=None,
+        base_model=str,
+        train_text_encoder=False,
+        prompt=str,
+        repo_folder=None,
+        pipeline: DiffusionPipeline = None,
 ):
     img_str = ""
     for i, image in enumerate(images):
@@ -108,16 +107,16 @@ DreamBooth for the text encoder was enabled: {train_text_encoder}.
 
 
 def log_validation(
-    text_encoder,
-    tokenizer,
-    unet,
-    vae,
-    args,
-    accelerator,
-    weight_dtype,
-    global_step,
-    prompt_embeds,
-    negative_prompt_embeds,
+        text_encoder,
+        tokenizer,
+        unet,
+        vae,
+        args,
+        accelerator,
+        weight_dtype,
+        global_step,
+        prompt_embeds,
+        negative_prompt_embeds,
 ):
     logger.info(
         f"Running validation... \n Generating {args.num_validation_images} images with prompt:"
@@ -431,8 +430,9 @@ def parse_args(input_args=None):
         "--hub_model_id",
         type=str,
         default=None,
-        help="The name of the repository to keep in sync with the local `output_dir`.",
+        help="The name of the repository to keep in sync with the local `model_output_dir`.",
     )
+    parser.add_argument("--task_id", type=str, help="sd_train.id")
     parser.add_argument(
         "--logging_dir",
         type=str,
@@ -530,7 +530,7 @@ def parse_args(input_args=None):
         type=float,
         default=None,
         help="SNR weighting gamma to be used if rebalancing the loss. Recommended value is 5.0. "
-        "More details here: https://arxiv.org/abs/2303.09556.",
+             "More details here: https://arxiv.org/abs/2303.09556.",
     )
     parser.add_argument(
         "--pre_compute_text_embeddings",
@@ -608,18 +608,18 @@ class DreamBoothDataset(Dataset):
     """
 
     def __init__(
-        self,
-        instance_data_root,
-        instance_prompt,
-        tokenizer,
-        class_data_root=None,
-        class_prompt=None,
-        class_num=None,
-        size=512,
-        center_crop=False,
-        encoder_hidden_states=None,
-        class_prompt_encoder_hidden_states=None,
-        tokenizer_max_length=None,
+            self,
+            instance_data_root,
+            instance_prompt,
+            tokenizer,
+            class_data_root=None,
+            class_prompt=None,
+            class_num=None,
+            size=512,
+            center_crop=False,
+            encoder_hidden_states=None,
+            class_prompt_encoder_hidden_states=None,
+            tokenizer_max_length=None,
     ):
         self.size = size
         self.center_crop = center_crop
@@ -797,7 +797,11 @@ def encode_prompt(text_encoder, input_ids, attention_mask, text_encoder_use_atte
 
 
 def main(args):
-    logging_dir = Path(args.output_dir, args.logging_dir)
+    logging_dir = Path(args.logging_dir)
+    model_output_dir = Path(args.output_dir, 'model')
+    checkpoints_dir = Path(args.output_dir, 'checkpoints')
+    args.__setattr__('model_output_dir', str(model_output_dir))
+    args.__setattr__('checkpoints_dir', str(checkpoints_dir))
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
 
@@ -872,7 +876,7 @@ def main(args):
             pipeline.to(accelerator.device)
 
             for example in tqdm(
-                sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                    sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
             ):
                 images = pipeline(example["prompt"]).images
 
@@ -889,10 +893,12 @@ def main(args):
     if accelerator.is_main_process:
         if args.output_dir is not None:
             os.makedirs(args.output_dir, exist_ok=True)
+            os.makedirs(args.model_output_dir, exist_ok=True)
+            os.makedirs(args.checkpoints_dir, exist_ok=True)
 
         if args.push_to_hub:
             repo_id = create_repo(
-                repo_id=args.hub_model_id or Path(args.output_dir).name, exist_ok=True, token=args.hub_token
+                repo_id=args.hub_model_id or Path(args.model_output_dir).name, exist_ok=True, token=args.hub_token
             ).repo_id
 
     # Load the tokenizer
@@ -927,11 +933,11 @@ def main(args):
     )
 
     # create custom saving & loading hooks so that `accelerator.save_state(...)` serializes in a nice format
-    def save_model_hook(models, weights, output_dir):
+    def save_model_hook(models, weights, model_output_dir):
         if accelerator.is_main_process:
             for model in models:
                 sub_dir = "unet" if isinstance(model, type(accelerator.unwrap_model(unet))) else "text_encoder"
-                model.save_pretrained(os.path.join(output_dir, sub_dir))
+                model.save_pretrained(os.path.join(model_output_dir, sub_dir))
 
                 # make sure to pop weight so that corresponding model is not saved again
                 weights.pop()
@@ -1004,7 +1010,7 @@ def main(args):
 
     if args.scale_lr:
         args.learning_rate = (
-            args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
+                args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
         )
 
     # Use 8-bit Adam for lower memory usage or to fine-tune the model in 16GB GPUs
@@ -1146,7 +1152,8 @@ def main(args):
     if accelerator.is_main_process:
         tracker_config = vars(copy.deepcopy(args))
         tracker_config.pop("validation_images")
-        accelerator.init_trackers("dreambooth", config=tracker_config)
+        proj_name = f't_{args.task_id}' if args.task_id else 'dreambooth'
+        accelerator.init_trackers(proj_name, config=tracker_config)
 
     # Train!
     total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -1168,7 +1175,7 @@ def main(args):
             path = os.path.basename(args.resume_from_checkpoint)
         else:
             # Get the mos recent checkpoint
-            dirs = os.listdir(args.output_dir)
+            dirs = os.listdir(args.checkpoints_dir)
             dirs = [d for d in dirs if d.startswith("checkpoint")]
             dirs = sorted(dirs, key=lambda x: int(x.split("-")[1]))
             path = dirs[-1] if len(dirs) > 0 else None
@@ -1181,7 +1188,7 @@ def main(args):
             initial_global_step = 0
         else:
             accelerator.print(f"Resuming from checkpoint {path}")
-            accelerator.load_state(os.path.join(args.output_dir, path))
+            accelerator.load_state(os.path.join(args.checkpoints_dir, path))
             global_step = int(path.split("-")[1])
 
             initial_global_step = global_step
@@ -1281,7 +1288,7 @@ def main(args):
                     # This is discussed in Section 4.2 of the same paper.
                     snr = compute_snr(noise_scheduler, timesteps)
                     base_weight = (
-                        torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(dim=1)[0] / snr
+                            torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(dim=1)[0] / snr
                     )
 
                     if noise_scheduler.config.prediction_type == "v_prediction":
@@ -1319,7 +1326,7 @@ def main(args):
                     if global_step % args.checkpointing_steps == 0:
                         # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
                         if args.checkpoints_total_limit is not None:
-                            checkpoints = os.listdir(args.output_dir)
+                            checkpoints = os.listdir(args.checkpoints_dir)
                             checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
                             checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
 
@@ -1334,10 +1341,10 @@ def main(args):
                                 logger.info(f"removing checkpoints: {', '.join(removing_checkpoints)}")
 
                                 for removing_checkpoint in removing_checkpoints:
-                                    removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
+                                    removing_checkpoint = os.path.join(args.checkpoints_dir, removing_checkpoint)
                                     shutil.rmtree(removing_checkpoint)
 
-                        save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
+                        save_path = os.path.join(args.checkpoints_dir, f"checkpoint-{global_step}")
                         accelerator.save_state(save_path)
                         logger.info(f"Saved state to {save_path}")
 
@@ -1395,7 +1402,7 @@ def main(args):
 
         pipeline.scheduler = pipeline.scheduler.from_config(pipeline.scheduler.config, **scheduler_args)
 
-        pipeline.save_pretrained(args.output_dir)
+        pipeline.save_pretrained(args.model_output_dir)
 
         if args.push_to_hub:
             save_model_card(
@@ -1404,12 +1411,12 @@ def main(args):
                 base_model=args.pretrained_model_name_or_path,
                 train_text_encoder=args.train_text_encoder,
                 prompt=args.instance_prompt,
-                repo_folder=args.output_dir,
+                repo_folder=args.model_output_dir,
                 pipeline=pipeline,
             )
             upload_folder(
                 repo_id=repo_id,
-                folder_path=args.output_dir,
+                folder_path=args.model_output_dir,
                 commit_message="End of training",
                 ignore_patterns=["step_*", "epoch_*"],
             )
@@ -1419,4 +1426,6 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
+    # print(args)
+    # print(args.instance_prompt)
     main(args)

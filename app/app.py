@@ -1,13 +1,12 @@
 import logging
 from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
+from launch import launch
 
 app = Flask(__name__)
 
 config = dotenv_values()
 app.config.from_mapping(config)
-
-print(app.config)
 
 
 @app.route('/', methods=('GET',))
@@ -24,16 +23,28 @@ def before_request_callback():
             abort(400)
 
 
-def _response_text(sel):
-    return Response('', mimetype='text/plain')
+@app.route('/task/prepare', methods=('POST',))
+def prepare_task():
+    return jsonify({
+        'ok': True,
+    })
 
 
-@app.route('/tasks', methods=('POST',))
-def summit_task():
-    return jsonify(('ok',))
+@app.route('/task/launch', methods=('POST',))
+def launch_task():
+    req = request.get_json()
+    task_params = req.get('task')
+    train_params = req.get('train')
+    accelerate_params = req.get('accelerate')
+
+    pid = launch(app.config, task_params, train_params, accelerate_params)
+
+    return jsonify({
+        'pid': pid,
+    })
 
 
-@app.route('/tasks/<id>', methods=('GET',))
+@app.route('/task/<id>', methods=('GET',))
 def task_status(id):
     return jsonify({'id': id,
                     'status': 'ok',

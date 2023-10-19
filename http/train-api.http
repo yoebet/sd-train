@@ -3,9 +3,26 @@ Accept: application/json
 
 ###
 
-GET {{base}}/tasks/123
+GET {{base}}/task/123
 Accept: application/json
 Authorization: {{auth}}
+
+###
+
+POST {{base}}/task/launch
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task": {
+    "task_id": "etrew"
+  },
+  "train": {
+    "pretrained_model_name_or_path": "runwayml/stable-diffusion-v1-5",
+    "instance_prompt": "a photo of sks dog"
+  }
+}
 
 ###
 

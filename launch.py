@@ -52,7 +52,7 @@ def launch(config, task_params, train_params,
 
     output_dir = f'{train_dir}/output'
     train_params['output_dir'] = output_dir
-    log_file=f'{output_dir}/log-{str(int(time.time()))}.txt'
+    log_file = f'{output_dir}/log-{str(int(time.time()))}.txt'
 
     # pretrained_model_name_or_path
 
@@ -82,9 +82,13 @@ def launch(config, task_params, train_params,
     def preexec_function():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
+    # https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
+
+    env = os.environ.copy()
+    env['HF_HUB_OFFLINE'] = 'true' if hf_local_files_only else ''
     p = subprocess.Popen(args,
                          preexec_fn=preexec_function,
-                         env={'HF_HUB_OFFLINE': 'true' if hf_local_files_only else ''})
+                         env=env)
 
     return p.pid
 

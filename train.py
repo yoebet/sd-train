@@ -56,6 +56,9 @@ from diffusers.training_utils import compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 
+
+print(os.environ)
+
 if is_wandb_available():
     import wandb
 

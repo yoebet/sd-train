@@ -52,13 +52,14 @@ def launch(config, task_params, train_params,
 
     output_dir = f'{train_dir}/output'
     train_params['output_dir'] = output_dir
+    log_file=f'{output_dir}/log-{str(int(time.time()))}.txt'
 
     # pretrained_model_name_or_path
 
     train_args = build_args(train_params)
 
     if no_accelerate:
-        args = ['nohup', 'python', f'{launch_script_dir}/train.py'] + train_args
+        args = ['nohup', 'python', f'{launch_script_dir}/train.py'] + train_args + [f'> {log_file} 2>&1']
     else:
         if accelerate_params is None:
             accelerate_args = []
@@ -73,7 +74,7 @@ def launch(config, task_params, train_params,
             accelerate_args.insert(0, f'--config_file={str(acf)}')
 
         script_file = f'{launch_script_dir}/train.py'
-        args = ['nohup', 'accelerate', 'launch'] + accelerate_args + [script_file] + train_args
+        args = ['nohup', 'accelerate', 'launch'] + accelerate_args + [script_file] + train_args + [f'> {log_file} 2>&1']
 
     print(' '.join(args))
 

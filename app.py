@@ -1,12 +1,11 @@
-import logging
 from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
 from launch import launch
+from prepare import prepare_instance_images
 
 app = Flask(__name__)
 
-config = dotenv_values()
-app.config.from_mapping(config)
+app.config.from_mapping(dotenv_values())
 
 
 @app.route('/', methods=('GET',))
@@ -25,18 +24,32 @@ def before_request_callback():
 
 @app.route('/task/prepare', methods=('POST',))
 def prepare_task():
-    return jsonify({
-        'ok': True,
-    })
+    req = request.get_json()
+    task = req.get('task')
+    res = prepare_instance_images(app.config, task)
+    return jsonify(res)
 
 
 @app.route('/task/launch', methods=('POST',))
 def launch_task():
+    config = app.config
     req = request.get_json()
     app.logger.info(req)
     task = req.get('task')
     launch_options = req.get('launch')
     train_params = req.get('train')
+
+    if launch_options is None:
+        launch_options = {}
+
+    skip_download_dataset_if_exists = launch_options.get('skip_download_dataset_if_exists')
+
+    prepare_res = prepare_instance_images(config,
+                                          task,
+                                          skip_if_exists=skip_download_dataset_if_exists)
+    if task['task_id'] is None:
+        task['task_id'] = prepare_res.get('task_id')
+
     # grouped -> flatten
     for k in train_params:
         p = train_params[k]
@@ -45,11 +58,12 @@ def launch_task():
             train_params.update(p)
 
     app.logger.info(train_params)
-    pid = launch(app.config, task, launch_options, train_params)
+    result = launch(config,
+                    task,
+                    launch_options,
+                    train_params)
 
-    return jsonify({
-        'pid': pid,
-    })
+    return jsonify(result)
 
 
 @app.route('/task/<id>', methods=('GET',))

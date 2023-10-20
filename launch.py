@@ -54,7 +54,6 @@ def launch(config, task, launch_options, train_params):
     # train_type = task_params.get('train_type', None)
     # base_model_name = task_params.get('base_model_name', None)
     # instance_images=task_params.get('instance_images', None)
-    # device_index = task_params.get('device_index', None)
 
     task_id = task.get('task_id', None)
     if task_id is None:
@@ -125,7 +124,7 @@ def launch(config, task, launch_options, train_params):
 
     logging.info(f'log file: {log_file}')
 
-    return p.pid
+    return {'pid': p.pid, 'task_id': task_id}
 
 
 if __name__ == "__main__":
@@ -145,7 +144,8 @@ if __name__ == "__main__":
         'pretrained_model_name_or_path': 'runwayml/stable-diffusion-v1-5',
         'instance_prompt': 'a photo of sks dog',
     }
-    pid = launch(config, task, launch_options, train_params)
+    result = launch(config, task, launch_options, train_params)
+    pid = result.get('pid')
     print(pid)
     pinfo = psutil.Process(pid).as_dict()
     pinfo.pop('environ')

@@ -25,6 +25,7 @@ import os
 import shutil
 import warnings
 from pathlib import Path
+import re
 
 import numpy as np
 import torch
@@ -55,7 +56,6 @@ from diffusers.optimization import get_scheduler
 from diffusers.training_utils import compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
-
 
 # print(os.environ)
 
@@ -635,7 +635,9 @@ class DreamBoothDataset(Dataset):
         if not self.instance_data_root.exists():
             raise ValueError(f"Instance {self.instance_data_root} images root doesn't exists.")
 
-        self.instance_images_path = list(Path(instance_data_root).iterdir())
+        i_files = Path(instance_data_root).iterdir()
+        i_files = filter(lambda f: not f.startswith('.'), i_files)
+        self.instance_images_path = list(i_files)
         self.num_instance_images = len(self.instance_images_path)
         self.instance_prompt = instance_prompt
         self._length = self.num_instance_images
@@ -643,7 +645,9 @@ class DreamBoothDataset(Dataset):
         if class_data_root is not None:
             self.class_data_root = Path(class_data_root)
             self.class_data_root.mkdir(parents=True, exist_ok=True)
-            self.class_images_path = list(self.class_data_root.iterdir())
+            c_files = self.class_data_root.iterdir()
+            c_files = filter(lambda f: re.match(r'\d+-', f), c_files)
+            self.class_images_path = list(c_files)
             if class_num is not None:
                 self.num_class_images = min(len(self.class_images_path), class_num)
             else:

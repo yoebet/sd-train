@@ -7,6 +7,26 @@ GET {{base}}/task/123
 Accept: application/json
 Authorization: {{auth}}
 
+
+###
+
+POST {{base}}/task/prepare
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task": {
+    "task_id": "6543",
+    "instance_images": [
+      "https://oss-prod.tishi.top/draw/sd/models/majicmixRealistic_v6-43331.jpg",
+      "https://oss-prod.tishi.top/draw/sd/models/manmaruMix_v20-86277.jpg",
+      "https://oss-prod.tishi.top/draw/sd/lora-models/33208-7934.jpg"
+    ]
+  }
+}
+
+
 ###
 
 POST {{base}}/task/launch

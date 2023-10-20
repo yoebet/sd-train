@@ -42,8 +42,7 @@ def launch(config, task, launch_options, train_params):
     accelerate_config_file = config.get('ACCELERATE_CONFIG', None)
     launch_script_dir = config.get('LAUNCH_SCRIPT_DIR', '.')
 
-    hf_hub_offline = train_params.get('hf_hub_offline', False)
-
+    hf_hub_offline = launch_options.get('hf_hub_offline', False)
     shell = launch_options.get('shell', False)
     wrap_proxy = launch_options.get('wrap_proxy', False)
     hf_accelerate = launch_options.get('hf_accelerate', False)

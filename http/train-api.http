@@ -18,10 +18,30 @@ Authorization: {{auth}}
   "task": {
     "task_id": "etrew"
   },
+  "launch": {
+    "shell": false,
+    "wrap_proxy": true,
+    "proxy_command": "proxychains4 -q",
+    "hf_hub_offline": true,
+    "hf_accelerate": true,
+    "accelerate": {
+      "mixed_precision": "fp16"
+    }
+  },
   "train": {
     "pretrained_model_name_or_path": "runwayml/stable-diffusion-v1-5",
     "instance_prompt": "a photo of sks dog",
-    "hf_local_files_only": true
+    "max_train_steps": 40,
+    "learning_rate": "2e-6",
+    "with_prior_preservation": true,
+    "class_prompt": "a photo of dog",
+    "num_class_images": 20,
+    "mixed_precision": "fp16",
+    "prior_generation_precision": "fp16",
+    "enable_xformers_memory_efficient_attention": true,
+    "use_8bit_adam": true,
+    "train_batch_size": 1,
+    "gradient_accumulation_steps": 4
   }
 }
 

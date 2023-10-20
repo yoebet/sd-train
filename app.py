@@ -33,11 +33,16 @@ def prepare_task():
 @app.route('/task/launch', methods=('POST',))
 def launch_task():
     req = request.get_json()
-    task_params = req.get('task')
+    task = req.get('task')
+    launch_options = req.get('launch')
     train_params = req.get('train')
-    accelerate_params = req.get('accelerate')
-
-    pid = launch(app.config, task_params, train_params, accelerate_params)
+    # grouped -> flatten
+    for k in train_params:
+        p = train_params[k]
+        if isinstance(p, dict):
+            train_params.pop(k)
+            train_params.update(p)
+    pid = launch(app.config, task, launch_options, train_params)
 
     return jsonify({
         'pid': pid,

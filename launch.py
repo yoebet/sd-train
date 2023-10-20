@@ -5,13 +5,23 @@ import time
 import psutil
 import pathlib
 
+shell_command = False
+
 
 def build_args(args_map):
     args = []
     for k in args_map:
         v = args_map[k]
         if isinstance(v, str):
-            args.append(f'--{k}={v}')
+            if shell_command:
+                if ' ' in v:
+                    if '"' in v:
+                        v = v.replace('"', '\\"')
+                    args.append(f'--{k}="{v}"')
+                else:
+                    args.append(f'--{k}={v}')
+            else:
+                args.append(f'--{k}={v}')
         elif isinstance(v, bool):
             if v:
                 args.append(f'--{k}')
@@ -59,7 +69,7 @@ def launch(config, task_params, train_params,
     train_args = build_args(train_params)
 
     if no_accelerate:
-        args = ['nohup', 'python', f'{launch_script_dir}/train.py'] + train_args + [f'> {log_file} 2>&1']
+        args = ['python', f'{launch_script_dir}/train.py'] + train_args
     else:
         if accelerate_params is None:
             accelerate_args = []
@@ -74,21 +84,33 @@ def launch(config, task_params, train_params,
             accelerate_args.insert(0, f'--config_file={str(acf)}')
 
         script_file = f'{launch_script_dir}/train.py'
-        args = ['nohup', 'accelerate', 'launch'] + accelerate_args + [script_file] + train_args + [f'> {log_file} 2>&1']
-
-    print(' '.join(args))
+        args = ['accelerate', 'launch'] + accelerate_args + [script_file] + train_args
 
     # p = subprocess.Popen(args, preexec_fn=os.setpgrp)
     def preexec_function():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     # https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
-
     env = os.environ.copy()
     env['HF_HUB_OFFLINE'] = 'true' if hf_local_files_only else ''
-    p = subprocess.Popen(args,
-                         preexec_fn=preexec_function,
-                         env=env)
+
+    if shell_command:
+        cmd = ' '.join(args)
+        cmd = f'nohup {cmd} > {log_file} 2>&1'
+        print(cmd)
+        p = subprocess.Popen(cmd,
+                             preexec_fn=preexec_function,
+                             env=env,
+                             shell=True)
+    else:
+        print(' '.join(args))
+        log_file_h = open(log_file, 'rw')
+        p = subprocess.Popen(args,
+                             preexec_fn=preexec_function,
+                             start_new_session=True,
+                             env=env,
+                             stdout=log_file_h,
+                             stderr=subprocess.STDOUT)
 
     return p.pid
 

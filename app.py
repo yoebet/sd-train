@@ -33,6 +33,7 @@ def prepare_task():
 @app.route('/task/launch', methods=('POST',))
 def launch_task():
     req = request.get_json()
+    app.logger.info(req)
     task = req.get('task')
     launch_options = req.get('launch')
     train_params = req.get('train')
@@ -42,6 +43,8 @@ def launch_task():
         if isinstance(p, dict):
             train_params.pop(k)
             train_params.update(p)
+
+    app.logger.info(train_params)
     pid = launch(app.config, task, launch_options, train_params)
 
     return jsonify({

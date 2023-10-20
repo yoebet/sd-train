@@ -75,6 +75,7 @@ def launch(config, task, launch_options, train_params):
     # pretrained_model_name_or_path
 
     train_args = build_args(train_params, shell=shell)
+    script_file = f'{launch_script_dir}/train.py'
 
     if hf_accelerate:
         if accelerate_params is None:
@@ -89,10 +90,9 @@ def launch(config, task, launch_options, train_params):
             acf = pathlib.Path(f'{data_base_dir}/accelerate-configs', accelerate_config_file)
             accelerate_args.insert(0, f'--config_file={str(acf)}')
 
-        script_file = f'{launch_script_dir}/train.py'
         args = ['accelerate', 'launch'] + accelerate_args + [script_file] + train_args
     else:
-        args = ['python', f'{launch_script_dir}/train.py'] + train_args
+        args = ['python', script_file] + train_args
 
     # p = subprocess.Popen(args, preexec_fn=os.setpgrp)
     def preexec_function():

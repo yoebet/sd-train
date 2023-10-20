@@ -636,7 +636,8 @@ class DreamBoothDataset(Dataset):
             raise ValueError(f"Instance {self.instance_data_root} images root doesn't exists.")
 
         i_files = Path(instance_data_root).iterdir()
-        i_files = filter(lambda f: not f.startswith('.'), i_files)
+        # f: PosixPath
+        i_files = filter(lambda f: not f.name.startswith('.'), i_files)
         self.instance_images_path = list(i_files)
         self.num_instance_images = len(self.instance_images_path)
         self.instance_prompt = instance_prompt
@@ -646,7 +647,7 @@ class DreamBoothDataset(Dataset):
             self.class_data_root = Path(class_data_root)
             self.class_data_root.mkdir(parents=True, exist_ok=True)
             c_files = self.class_data_root.iterdir()
-            c_files = filter(lambda f: re.match(r'\d+-', f), c_files)
+            c_files = filter(lambda f: re.match(r'\d+-', f.name), c_files)
             self.class_images_path = list(c_files)
             if class_num is not None:
                 self.num_class_images = min(len(self.class_images_path), class_num)

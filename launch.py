@@ -4,8 +4,10 @@ import subprocess
 import time
 import psutil
 import pathlib
+import logging
 
-shell_command = False
+shell = False
+proxy_command = 'proxychains4'
 
 
 def build_args(args_map):
@@ -13,7 +15,7 @@ def build_args(args_map):
     for k in args_map:
         v = args_map[k]
         if isinstance(v, str):
-            if shell_command:
+            if shell:
                 if ' ' in v:
                     if '"' in v:
                         v = v.replace('"', '\\"')
@@ -40,6 +42,7 @@ def launch(config, task_params, train_params,
     accelerate_config_file = config.get('ACCELERATE_CONFIG', None)
     launch_script_dir = config.get('LAUNCH_SCRIPT_DIR', '.')
 
+    wrap_proxy = task_params.get('wrap_proxy', False)
     task_id = task_params.get('task_id', None)
     hf_local_files_only = task_params.get('hf_local_files_only', False)
     # user_id = task_params.get('user_id', None)
@@ -60,9 +63,8 @@ def launch(config, task_params, train_params,
     if train_params.get('with_prior_preservation'):
         train_params['class_data_dir'] = f'{train_dir}/class_images'
 
-    output_dir = f'{train_dir}/output'
-    train_params['output_dir'] = output_dir
-    log_file = f'{output_dir}/log-{str(int(time.time()))}.txt'
+    train_params['output_dir'] = train_dir
+    log_file = f'{train_dir}/log-{str(int(time.time()))}.txt'
 
     # pretrained_model_name_or_path
 
@@ -94,23 +96,29 @@ def launch(config, task_params, train_params,
     env = os.environ.copy()
     env['HF_HUB_OFFLINE'] = 'true' if hf_local_files_only else ''
 
-    if shell_command:
+    if shell:
         cmd = ' '.join(args)
+        if wrap_proxy:
+            cmd = f'{proxy_command} {cmd}'
         cmd = f'nohup {cmd} > {log_file} 2>&1'
-        print(cmd)
+        logging.info(cmd)
         p = subprocess.Popen(cmd,
                              preexec_fn=preexec_function,
                              env=env,
                              shell=True)
     else:
-        print(' '.join(args))
-        log_file_h = open(log_file, 'rw')
+        if wrap_proxy:
+            args.insert(0, proxy_command)
+        logging.info(' '.join(args))
+        log_file_h = open(log_file, 'x')
         p = subprocess.Popen(args,
                              preexec_fn=preexec_function,
                              start_new_session=True,
                              env=env,
                              stdout=log_file_h,
                              stderr=subprocess.STDOUT)
+
+    logging.info(f'log file: {log_file}')
 
     return p.pid
 

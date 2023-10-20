@@ -77,8 +77,6 @@ def launch(config, task, launch_options, train_params):
     train_args = build_args(train_params, shell=shell)
 
     if hf_accelerate:
-        args = ['python', f'{launch_script_dir}/train.py'] + train_args
-    else:
         if accelerate_params is None:
             accelerate_args = []
         else:
@@ -93,6 +91,8 @@ def launch(config, task, launch_options, train_params):
 
         script_file = f'{launch_script_dir}/train.py'
         args = ['accelerate', 'launch'] + accelerate_args + [script_file] + train_args
+    else:
+        args = ['python', f'{launch_script_dir}/train.py'] + train_args
 
     # p = subprocess.Popen(args, preexec_fn=os.setpgrp)
     def preexec_function():
@@ -114,7 +114,7 @@ def launch(config, task, launch_options, train_params):
                              shell=True)
     else:
         if wrap_proxy:
-            args.insert(0, proxy_command)
+            args = proxy_command.split() + args
         logging.info(' '.join(args))
         log_file_h = open(log_file, 'x')
         p = subprocess.Popen(args,

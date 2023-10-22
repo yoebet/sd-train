@@ -85,7 +85,7 @@ def launch(config, task, launch_options, train_params):
             accelerate_args = build_args(accelerate_params, shell=shell)
 
         if accelerate_config_file is not None:
-            acf = pathlib.Path(f'{data_base_dir}/accelerate-configs', accelerate_config_file)
+            acf = pathlib.Path(f'{data_base_dir}/hf-accelerate', accelerate_config_file)
             accelerate_args.insert(0, f'--config_file={str(acf)}')
 
         args = ['accelerate', 'launch'] + accelerate_args + [script_file] + train_args

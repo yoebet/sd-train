@@ -2,17 +2,42 @@
 
 ```
 data
-    logs
-        hot (tensorboard)
+    hf-accelerate
+        xxx.yaml
+    hf-pretrained
+        darkSushiMixMix_225D
+            feature_extractor
+            safety_checker
+            scheduler
+            text_encoder
+            tokenizer
+            unet
+            vae
+    logs (tensorboard)
+        hot
             t_{tid}
         cold
             t_{tid}
+    notes
+    sd_models
+        controlnet-models
+        controlnet-annotator-models
+        models (sd checkpoints)
+            adetailer
+            Lora
+            Stable-diffusion
+            VAE
+            ...
+    stable-diffusion-configs
+        v1-inference.yaml
     trains
         t_{tid}
             instance_images
+                1-xxx.jpg
             class_images
+                1-xxx.jpg
             output
-                hf_proj (model)
+                model
                     feature_extractor
                     safety_checker
                     scheduler
@@ -26,17 +51,4 @@ data
                     s_{step}
                 test (images, final)
                 logs
-    training
-        p_{pid}
-    sd_models
-        controlnet-models
-        controlnet-annotator-models
-        models (sd checkpoints)
-            adetailer
-            Lora
-            Stable-diffusion
-            VAE
-            ...
-    accelerate-configs
-        xxx.yaml
 ```

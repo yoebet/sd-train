@@ -36,7 +36,12 @@ Authorization: {{auth}}
 
 {
   "task": {
-    "task_id": "etrew"
+    "task_id": "6543",
+    "instance_images": [
+      "https://oss-prod.tishi.top/draw/sd/models/majicmixRealistic_v6-43331.jpg",
+      "https://oss-prod.tishi.top/draw/sd/models/manmaruMix_v20-86277.jpg",
+      "https://oss-prod.tishi.top/draw/sd/lora-models/33208-7934.jpg"
+    ]
   },
   "launch": {
     "shell": false,
@@ -44,6 +49,7 @@ Authorization: {{auth}}
     "proxy_command": "proxychains4 -q",
     "hf_hub_offline": true,
     "hf_accelerate": true,
+    "skip_download_dataset_if_exists": true,
     "accelerate": {
       "mixed_precision": "fp16"
     }
@@ -60,7 +66,7 @@ Authorization: {{auth}}
     "prior_generation_precision": "fp16",
     "enable_xformers_memory_efficient_attention": true,
     "use_8bit_adam": true,
-    "train_batch_size": 1,
+    "train_batch_size": 2,
     "gradient_accumulation_steps": 4
   }
 }

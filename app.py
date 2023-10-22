@@ -32,9 +32,8 @@ def prepare_task():
 
 @app.route('/task/launch', methods=('POST',))
 def launch_task():
-    config = app.config
     req = request.get_json()
-    app.logger.info(req)
+    # app.logger.info(req)
     task = req.get('task')
     launch_options = req.get('launch')
     train_params = req.get('train')
@@ -42,11 +41,12 @@ def launch_task():
     if launch_options is None:
         launch_options = {}
 
-    skip_download_dataset_if_exists = launch_options.get('skip_download_dataset_if_exists')
+    skip_download_ie = launch_options.get('skip_download_dataset_if_exists')
 
+    config = app.config
     prepare_res = prepare_instance_images(config,
                                           task,
-                                          skip_if_exists=skip_download_dataset_if_exists)
+                                          skip_if_exists=skip_download_ie)
     if task['task_id'] is None:
         task['task_id'] = prepare_res.get('task_id')
 
@@ -66,8 +66,11 @@ def launch_task():
     return jsonify(result)
 
 
-@app.route('/task/<id>', methods=('GET',))
-def task_status(id):
+@app.route('/task/status', methods=('POST',))
+def check_task_status():
+    req = request.get_json()
+    task_id = req.get('task_id')
+    pid = req.get('pid')
     return jsonify({'id': id,
                     'status': 'ok',
                     })

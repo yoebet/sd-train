@@ -1,7 +1,9 @@
-.idea/
-data/
-diffusers/
-venv/
+/.idea/
+/data/
+/diffusers/
+/venv/
+/.env.local
+/http/http-client.private.env.json
 .DS_Store
 __pycache__/
 nohup.out

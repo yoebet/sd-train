@@ -105,8 +105,6 @@ Authorization: {{auth}}
     "with_prior_preservation": true,
     "class_prompt": "a photo of dog",
     "num_class_images": 20,
-    "enable_xformers_memory_efficient_attention": true,
-    "use_8bit_adam": true,
     "train_batch_size": 2,
     "gradient_accumulation_steps": 4
   }

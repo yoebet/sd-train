@@ -14,14 +14,17 @@ logging.basicConfig(
 )
 
 
-def prepare_instance_images(config, task, skip_if_exists=False):
+def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
+    if logger is None:
+        logger = logging.getLogger('prepare')
+
     data_base_dir = config['DATA_BASE_DIR']
     task_id = task.get('task_id', None)
     if task_id is None:
         task_id = str(int(time.time()))
     instance_images = task.get('instance_images', None)
     if instance_images is None:
-        logging.warning(f'prepare (task_id={task_id}): no instance_images')
+        logger.warning(f'prepare (task_id={task_id}): no instance_images')
         return {'task_id': task_id}
 
     train_dir = f'{data_base_dir}/trains/t_{task_id}'
@@ -32,21 +35,21 @@ def prepare_instance_images(config, task, skip_if_exists=False):
             files = os.listdir(instance_data_dir)
             files = [f for f in files if re.match(r'\d+-', f)]
             if len(files) == len(instance_images):
-                logging.info(f'instance_images exists, skip')
+                logger.info(f'instance_images exists, skip')
                 return {'task_id': task_id}
 
         shutil.rmtree(instance_data_dir)
     os.makedirs(instance_data_dir, exist_ok=True)
     for i, url in enumerate(instance_images):
         if not url.startswith('http'):
-            logging.warning(f'image must be url: {url}')
+            logger.warning(f'image must be url: {url}')
             continue
         image_path = urlparse(url).path
         image_name = os.path.basename(image_path)
         if '.' in image_name:
             ext = image_name.split('.')[-1]
             if ext not in ('jpg', 'jpeg', 'png'):
-                logging.warning(f'image format: {ext} ({url})')
+                logger.warning(f'image format: {ext} ({url})')
         else:
             ext = 'jpg'
         res = requests.get(url)
@@ -58,7 +61,7 @@ def prepare_instance_images(config, task, skip_if_exists=False):
                 # shutil.copyfileobj(res.content, f)
                 f.write(res.content)
         else:
-            logging.warning(f'download failed: {url}')
+            logger.warning(f'download failed: {url}')
 
     return {'task_id': task_id}
 

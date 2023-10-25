@@ -36,21 +36,19 @@ data
                 1-xxx.jpg
             class_images
                 1-xxx.png
-            output
-                model
-                    feature_extractor
-                    safety_checker
-                    scheduler
-                    text_encoder
-                    tokenizer
-                    unet
-                    vae
-                checkpoints
-                    checkpoint-xxx
-                validations
-                    s_{step}
-                        1-xxx.png
-                test (images, final)
+            model
+                feature_extractor
+                safety_checker
+                scheduler
+                text_encoder
+                tokenizer
+                unet
+                vae
+            checkpoints
+                checkpoint-xxx
+            validations
+                s_{step}
                     1-xxx.png
-                logs
+            test (images, final)
+                1-xxx.png
 ```

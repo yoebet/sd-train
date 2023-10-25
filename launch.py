@@ -37,7 +37,10 @@ def build_args(args_map, shell=False):
     return args
 
 
-def launch(config, task, launch_options, train_params):
+def launch(config, task, launch_options, train_params, logger=None):
+    if logger is None:
+        logger = logging.getLogger('launch')
+
     data_base_dir = config['DATA_BASE_DIR']
     accelerate_config_file = config.get('ACCELERATE_CONFIG', None)
     launch_script_dir = config.get('LAUNCH_SCRIPT_DIR', '.')
@@ -54,6 +57,8 @@ def launch(config, task, launch_options, train_params):
     # train_type = task_params.get('train_type', None)
     # base_model_name = task_params.get('base_model_name', None)
     # instance_images=task_params.get('instance_images', None)
+
+    # pretrained_model_name_or_path
 
     task_id = task.get('task_id', None)
     if task_id is None:
@@ -73,7 +78,7 @@ def launch(config, task, launch_options, train_params):
     # pretrained_model_name_or_path
 
     train_args = build_args(train_params, shell=shell)
-    script_file = f'{launch_script_dir}/train.py'
+    script_file = f'{launch_script_dir}/train_dreambooth.py'
 
     if hf_accelerate:
         if accelerate_params is None:
@@ -105,7 +110,7 @@ def launch(config, task, launch_options, train_params):
         if wrap_proxy:
             cmd = f'{proxy_command} {cmd}'
         cmd = f'nohup {cmd} > {log_file} 2>&1'
-        logging.info(cmd)
+        logger.info(cmd)
         p = subprocess.Popen(cmd,
                              preexec_fn=preexec_function,
                              env=env,
@@ -113,7 +118,7 @@ def launch(config, task, launch_options, train_params):
     else:
         if wrap_proxy:
             args = proxy_command.split() + args
-        logging.info(' '.join(args))
+        logger.info(' '.join(args))
         log_file_h = open(log_file, 'x')
         p = subprocess.Popen(args,
                              preexec_fn=preexec_function,
@@ -122,9 +127,9 @@ def launch(config, task, launch_options, train_params):
                              stdout=log_file_h,
                              stderr=subprocess.STDOUT)
 
-    logging.info(f'log file: {log_file}')
+    logger.info(f'log file: {log_file}')
 
-    return {'pid': p.pid, 'task_id': task_id}
+    return {'success': True, 'root_pid': p.pid, 'task_id': task_id}
 
 
 if __name__ == "__main__":

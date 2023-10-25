@@ -46,12 +46,13 @@ def launch_task():
     if launch_options is None:
         launch_options = {}
 
-    skip_download_ie = launch_options.get('skip_download_dataset_if_exists')
-
     config = app.config
+
+    skip_download_ie = launch_options.get('skip_download_dataset_if_exists')
     prepare_res = prepare_instance_images(config,
                                           task,
-                                          skip_if_exists=skip_download_ie)
+                                          skip_if_exists=skip_download_ie,
+                                          logger=logger)
     if task['task_id'] is None:
         task['task_id'] = prepare_res.get('task_id')
 
@@ -66,7 +67,8 @@ def launch_task():
     result = launch(config,
                     task,
                     launch_options,
-                    train_params)
+                    train_params,
+                    logger=logger)
 
     return jsonify(result)
 

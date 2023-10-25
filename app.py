@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
 from launch import launch
@@ -6,6 +7,9 @@ from prepare import prepare_instance_images
 app = Flask(__name__)
 
 app.config.from_mapping(dotenv_values())
+app.config.from_mapping(dotenv_values('.env.local'))
+
+logger = app.logger
 
 
 @app.route('/', methods=('GET',))
@@ -27,13 +31,14 @@ def prepare_task():
     req = request.get_json()
     task = req.get('task')
     res = prepare_instance_images(app.config, task)
+    # base_model_name = req.get('base_model_name', None)
     return jsonify(res)
 
 
 @app.route('/task/launch', methods=('POST',))
 def launch_task():
     req = request.get_json()
-    # app.logger.info(req)
+    logger.info(req)
     task = req.get('task')
     launch_options = req.get('launch')
     train_params = req.get('train')
@@ -57,7 +62,7 @@ def launch_task():
             train_params.pop(k)
             train_params.update(p)
 
-    app.logger.info(train_params)
+    logger.info(train_params)
     result = launch(config,
                     task,
                     launch_options,
@@ -66,14 +71,71 @@ def launch_task():
     return jsonify(result)
 
 
+def check_train_dirs(task_id, dir_names):
+    data_base_dir = app.config['DATA_BASE_DIR']
+    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    if not os.path.exists(train_dir):
+        return False
+    return all([os.path.exists(f'{train_dir}/{dir}') for dir in dir_names])
+
+
 @app.route('/task/status', methods=('POST',))
 def check_task_status():
     req = request.get_json()
     task_id = req.get('task_id')
-    pid = req.get('pid')
-    return jsonify({'id': id,
-                    'status': 'ok',
-                    })
+    pid = req.get('root_pid')
+    pid = int(pid)
+
+    import psutil
+
+    running = False
+
+    if psutil.pid_exists(pid):
+        rp = psutil.Process(pid)
+        # Python
+        logger.info(rp.name())
+        try:
+            logger.info(rp.cmdline())
+        except psutil.ZombieProcess:
+            return jsonify({
+                'success': True,
+                'task_status': 'failed',
+                'failure_reason': 'unknown'
+            })
+        except psutil.AccessDenied:
+            logger.error('AccessDenied')
+            return jsonify({
+                'success': False,
+                'error_message': 'wrong pid'
+            })
+
+        pstatus = rp.status()
+        if pstatus == 'running':
+            running = True
+        elif pstatus == 'zombie':
+            pass
+        else:
+            logger.info(f'process status: {pstatus}')
+            running = True
+
+    if running:
+        return jsonify({
+            'success': True,
+            'task_status': 'running',
+        })
+
+    dir_ok = check_train_dirs(task_id, ['test'])
+    if dir_ok:
+        return jsonify({
+            'success': True,
+            'task_status': 'done',
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'task_status': 'failed',
+            'failure_reason': 'unknown'
+        })
 
 
 def get():

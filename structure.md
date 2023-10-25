@@ -28,14 +28,14 @@ data
             Stable-diffusion
             VAE
             ...
-    stable-diffusion-configs
+    sd-configs
         v1-inference.yaml
     trains
         t_{tid}
             instance_images
                 1-xxx.jpg
             class_images
-                1-xxx.jpg
+                1-xxx.png
             output
                 model
                     feature_extractor
@@ -49,6 +49,8 @@ data
                     checkpoint-xxx
                 validations
                     s_{step}
+                        1-xxx.png
                 test (images, final)
+                    1-xxx.png
                 logs
 ```

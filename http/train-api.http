@@ -3,14 +3,7 @@ Accept: application/json
 
 ###
 
-GET {{base}}/task/123
-Accept: application/json
-Authorization: {{auth}}
-
-
-###
-
-POST {{base}}/task/prepare
+POST {{base}}/prepare_task
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
@@ -29,7 +22,7 @@ Authorization: {{auth}}
 
 ###
 
-POST {{base}}/task/launch
+POST {{base}}/launch
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
@@ -113,32 +106,27 @@ Authorization: {{auth}}
 
 ###
 
-POST {{base}}/task/status
+POST {{base}}/task/aaa/status
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
 
 {
-  "task_id": "aaa",
   "root_pid": "94171"
 }
 
 
 ###
 
-POST {{base}}/task/generate_single
+POST {{base}}/task/aaa/generate_single
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
 
-{
-  "task_id": "aaa"
-}
-
 
 ###
 
-POST {{base}}/task/prepare_base_hf
+POST {{base}}/prepare_base_hf
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
@@ -147,3 +135,32 @@ Authorization: {{auth}}
   "base_model_name": "GuoFeng3.4",
   "ext": "safetensors"
 }
+
+
+###
+
+GET {{base}}/task/aaa/test_images
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+###
+
+GET {{base}}/task/aaa/test_images/1-1d2082ea7f2349bc398a7ab83123708fa9e9274a.jpg/b64
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+###
+
+POST {{base}}/task/aaa/release
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4"
+}
+

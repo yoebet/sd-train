@@ -1,4 +1,7 @@
 import os
+import re
+import base64
+import shutil
 from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
 from launch import launch
@@ -27,7 +30,7 @@ def before_request_callback():
             abort(400)
 
 
-@app.route('/task/prepare', methods=('POST',))
+@app.route('/prepare_task', methods=('POST',))
 def prepare_task():
     req = request.get_json()
     task = req.get('task')
@@ -36,7 +39,7 @@ def prepare_task():
     return jsonify(res)
 
 
-@app.route('/task/launch', methods=('POST',))
+@app.route('/launch', methods=('POST',))
 def launch_task():
     req = request.get_json()
     logger.info(req)
@@ -82,10 +85,9 @@ def check_train_dirs(task_id, dir_names):
     return all([os.path.exists(f'{train_dir}/{dir}') for dir in dir_names])
 
 
-@app.route('/task/status', methods=('POST',))
-def check_task_status():
+@app.route('/task/<task_id>/status', methods=('POST',))
+def check_task_status(task_id):
     req = request.get_json()
-    task_id = req.get('task_id')
     pid = req.get('root_pid')
     pid = int(pid)
 
@@ -141,10 +143,8 @@ def check_task_status():
         })
 
 
-@app.route('/task/generate_single', methods=('POST',))
-def generate_single():
-    req = request.get_json()
-    task_id = req.get('task_id')
+@app.route('/task/<task_id>/generate_single', methods=('POST',))
+def generate_single(task_id):
     success = convert_trained_to_original(app.config,
                                           task_id)
     return jsonify({
@@ -152,7 +152,7 @@ def generate_single():
     })
 
 
-@app.route('/task/prepare_base_hf', methods=('POST',))
+@app.route('/prepare_base_hf', methods=('POST',))
 def prepare_base_hf():
     req = request.get_json()
     base_model_name = req.get('base_model_name')
@@ -163,6 +163,77 @@ def prepare_base_hf():
                                           logger=logger)
     return jsonify({
         'success': success
+    })
+
+
+@app.route('/task/<task_id>/test_images', methods=('GET',))
+def list_test_images(task_id):
+    data_base_dir = app.config['DATA_BASE_DIR']
+    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    test_output_dir = f'{train_dir}/test'
+    if not os.path.isdir(test_output_dir):
+        return jsonify({
+            'success': False,
+            'error_message': 'test output dir not exists'
+        })
+
+    files = os.listdir(test_output_dir)
+    files = [f for f in files if re.match(r'\d+-', f)]
+    return jsonify({
+        'success': True,
+        'filenames': files
+    })
+
+
+@app.route('/task/<task_id>/test_images/<filename>/b64', methods=('GET',))
+def get_test_image(task_id, filename):
+    data_base_dir = app.config['DATA_BASE_DIR']
+    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    image_path = f'{train_dir}/test/{filename}'
+    if not os.path.isfile(image_path):
+        return jsonify({
+            'success': False,
+            'error_message': 'no such file'
+        })
+
+    with open(image_path, "rb") as img_file:
+        encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
+    return jsonify({
+        'success': True,
+        'base64': encoded_image
+    })
+
+
+@app.route('/task/<task_id>/release', methods=('POST',))
+def release_model(task_id):
+    req = request.get_json()
+    target_model_name = req.get('target_model_name')
+    if target_model_name is None:
+        base_model_name = req.get('base_model_name')
+        if base_model_name is not None:
+            target_model_name = f'{base_model_name}-t_{task_id}'
+        else:
+            target_model_name = f't_{task_id}'
+
+    data_base_dir = app.config['DATA_BASE_DIR']
+    checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
+
+    model_file = f'{data_base_dir}/trains/t_{task_id}/model/model.safetensors'
+    if not os.path.isfile(model_file):
+        return jsonify({
+            'success': False,
+            'error_message': 'no model file'
+        })
+
+    target_file_name = f'{target_model_name}.safetensors'
+    target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
+    if os.path.isfile(target_model_file):
+        logger.warning(f'target file exists: {target_file_name}')
+
+    shutil.copyfile(model_file, target_model_file)
+
+    return jsonify({
+        'success': True
     })
 
 

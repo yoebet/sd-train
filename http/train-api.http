@@ -122,3 +122,28 @@ Authorization: {{auth}}
   "task_id": "aaa",
   "root_pid": "94171"
 }
+
+
+###
+
+POST {{base}}/task/generate_single
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "task_id": "aaa"
+}
+
+
+###
+
+POST {{base}}/task/prepare_base_hf
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4",
+  "ext": "safetensors"
+}

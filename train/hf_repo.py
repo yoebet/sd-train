@@ -46,17 +46,29 @@ DreamBooth for the text encoder was enabled: {train_text_encoder}.
 
 
 def put_to_hf(args, pipeline, images):
-    repo_id = args.hub_model_id or Path(args.model_output_dir).name
+    repo_id = args.hub_model_id
+    if repo_id is None:
+        if args.task_id is not None:
+            repo_id = f'{args.base_model_name}-t_{args.task_id}'
+        else:
+            out_dir = Path(args.model_output_dir)
+            repo_id = out_dir.name
+            if repo_id == 'model':
+                repo_id = out_dir.parent.name
     repo_id = create_repo(
         repo_id=repo_id,
         exist_ok=True,
         token=args.hub_token
     ).repo_id
 
+    if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') <= 1:
+        base_model = args.pretrained_model_name_or_path
+    else:
+        base_model = args.base_model_name
     save_model_card(
         repo_id,
         images=images,
-        base_model=args.pretrained_model_name_or_path,
+        base_model=base_model,
         train_text_encoder=args.train_text_encoder,
         prompt=args.instance_prompt,
         repo_folder=args.model_output_dir,

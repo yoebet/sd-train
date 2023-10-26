@@ -1,3 +1,5 @@
+import sys
+
 from safetensors import safe_open
 from safetensors.torch import save_file
 
@@ -5,7 +7,10 @@ from safetensors.torch import save_file
 # fix convert_diffusers_to_original_stable_diffusion
 # https://github.com/huggingface/diffusers/issues/4790
 
-def fix_diffusers_model_conversion(load_path: str, save_path: str):
+def fix_diffusers_model_conversion(load_path: str, save_path: str = None):
+    if save_path is None:
+        save_path = load_path
+
     # load original
     tensors = {}
     with safe_open(load_path, framework="pt") as f:
@@ -32,5 +37,5 @@ def fix_diffusers_model_conversion(load_path: str, save_path: str):
 
 
 if __name__ == '__main__':
-    file = 'data/hf-pretrained/photoStyle_v20/diffusion-model.safetensors'
-    fix_diffusers_model_conversion(file, file)
+    file = sys.argv[1]
+    fix_diffusers_model_conversion(file)

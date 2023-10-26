@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
 from launch import launch
 from prepare import prepare_instance_images
+from conversion import convert_base_original_to_hf, convert_trained_to_original
 
 app = Flask(__name__)
 
@@ -138,6 +139,31 @@ def check_task_status():
             'task_status': 'failed',
             'failure_reason': 'unknown'
         })
+
+
+@app.route('/task/generate_single', methods=('POST',))
+def generate_single():
+    req = request.get_json()
+    task_id = req.get('task_id')
+    success = convert_trained_to_original(app.config,
+                                          task_id)
+    return jsonify({
+        'success': success
+    })
+
+
+@app.route('/task/prepare_base_hf', methods=('POST',))
+def prepare_base_hf():
+    req = request.get_json()
+    base_model_name = req.get('base_model_name')
+    ext = req.get('ext')
+    success = convert_base_original_to_hf(app.config,
+                                          base_model_name,
+                                          ext,
+                                          logger=logger)
+    return jsonify({
+        'success': success
+    })
 
 
 def get():

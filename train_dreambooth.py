@@ -29,6 +29,7 @@ from diffusers import (
     DDPMScheduler,
     DiffusionPipeline,
     UNet2DConditionModel,
+    StableDiffusionPipeline,
 )
 from diffusers.optimization import get_scheduler
 from diffusers.training_utils import compute_snr
@@ -39,6 +40,8 @@ from train.datasets import DreamBoothDataset, collate_fn, tokenize_prompt
 from train.hf_repo import put_to_hf
 from train.train_args import parse_args
 from train.validation import log_validation
+from train.convert_to_original import hf_to_original
+from train.fix_conversion import fix_diffusers_model_conversion
 
 # print(os.environ)
 
@@ -106,6 +109,21 @@ def main(args):
     checkpoints_dir = Path(args.output_dir, 'checkpoints')
     args.__setattr__('model_output_dir', str(model_output_dir))
     args.__setattr__('checkpoints_dir', str(checkpoints_dir))
+
+    if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
+        pass
+    elif args.base_model_single_file is not None:
+        pipe = StableDiffusionPipeline.from_single_file(
+            args.base_model_single_file,
+            use_safetensors=True,
+            load_safety_checker=False,
+            local_files_only=True,
+            dtype=torch.half,
+            original_config_file=args.base_model_config_file,
+        )
+        hf_pretrained_dir = args.hf_pretrained_dir
+        pipe.save_pretrained(f'{hf_pretrained_dir}/{args.base_model_name}')
+        del pipe
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=str(logging_dir))
@@ -683,6 +701,10 @@ def main(args):
         pipeline.scheduler = pipeline.scheduler.from_config(pipeline.scheduler.config, **scheduler_args)
 
         pipeline.save_pretrained(args.model_output_dir)
+
+        model_file = f'{args.model_output_dir}/model.safetensors'
+        hf_to_original(args.model_output_dir, model_file)
+        fix_diffusers_model_conversion(model_file)
 
         if args.push_to_hub:
             put_to_hf(args, pipeline=pipeline, images=images)

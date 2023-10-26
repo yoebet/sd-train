@@ -37,6 +37,46 @@ def build_args(args_map, shell=False):
     return args
 
 
+def locate_base_model(train_params, data_base_dir, logger=None):
+    base_model_name = train_params.get('base_model_name', None)
+    if base_model_name is None:
+        raise Exception('missing base_model_name')
+
+    hf_pretrained_dir = f'{data_base_dir}/hf-pretrained'
+    train_params['hf_pretrained_dir'] = hf_pretrained_dir
+
+    pretrained_model_name_or_path = train_params.get('pretrained_model_name_or_path', None)
+    if pretrained_model_name_or_path and pretrained_model_name_or_path.count('/') > 1 and os.path.exists(
+            pretrained_model_name_or_path):
+        return
+
+    pretrained_base_model = f'{hf_pretrained_dir}/{base_model_name}'
+    if os.path.isdir(pretrained_base_model):
+        train_params['pretrained_model_name_or_path'] = pretrained_base_model
+        return
+
+    sd_config_file = f'{data_base_dir}/sd-configs/v1-inference.yaml'
+    if os.path.exists(sd_config_file):
+        train_params['base_model_config_file'] = sd_config_file
+
+    base_model_file_name = train_params.get('base_model_file_name', None)
+    checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
+
+    if base_model_file_name is not None:
+        base_model_single_file = f'{checkpoints_base_dir}/{base_model_file_name}'
+        if os.path.exists(base_model_single_file):
+            train_params['base_model_single_file'] = base_model_single_file
+            return
+        if logger is not None:
+            logger.warn(f'base model file not found: {base_model_file_name}')
+
+    for ext in ('safetensors', 'ckpt'):
+        base_model_single_file = f'{checkpoints_base_dir}/{base_model_name}.{ext}'
+        if os.path.exists(base_model_single_file):
+            train_params['base_model_single_file'] = base_model_single_file
+            return
+
+
 def launch(config, task, launch_options, train_params, logger=None):
     if logger is None:
         logger = logging.getLogger('launch')
@@ -50,7 +90,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     wrap_proxy = launch_options.get('wrap_proxy', False)
     hf_accelerate = launch_options.get('hf_accelerate', False)
     accelerate_params = launch_options.get('accelerate', None)
-    proxy_command = launch_options.get('proxy_command', 'proxychains4')
+    proxy_command = launch_options.get('proxy_command', 'proxychains4 -q')
 
     # user_id = task_params.get('user_id', None)
     # live/object/style
@@ -75,7 +115,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     train_params['output_dir'] = train_dir
     log_file = f'{train_dir}/log-{str(int(time.time()))}.txt'
 
-    # pretrained_model_name_or_path
+    locate_base_model(train_params, data_base_dir, logger=logger)
 
     train_args = build_args(train_params, shell=shell)
     script_file = f'{launch_script_dir}/train_dreambooth.py'

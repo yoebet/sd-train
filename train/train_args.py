@@ -4,11 +4,11 @@ import warnings
 
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
+    parser.add_argument("--task_id", type=str, help="sd_train.id")
     parser.add_argument(
         "--pretrained_model_name_or_path",
         type=str,
         default=None,
-        required=True,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
@@ -20,6 +20,31 @@ def parse_args(input_args=None):
             "Revision of pretrained model identifier from huggingface.co/models. Trainable model components should be"
             " float32 precision."
         ),
+    )
+    parser.add_argument(
+        "--base_model_name",
+        type=str,
+        default=None,
+        required=True,
+        help="base model name",
+    )
+    parser.add_argument(
+        "--base_model_single_file",
+        type=str,
+        default=None,
+        help="Path to a model file (.safetensors/.ckpt) for base model",
+    )
+    parser.add_argument(
+        "--base_model_config_file",
+        type=str,
+        default=None,
+        help="v1-inference.yaml, etc.",
+    )
+    parser.add_argument(
+        "--hf_pretrained_dir",
+        type=str,
+        default=None,
+        help="hf pretrained dir for base models",
     )
     parser.add_argument(
         "--tokenizer_name",
@@ -210,7 +235,6 @@ def parse_args(input_args=None):
         default=None,
         help="The name of the repository to keep in sync with the local `model_output_dir`.",
     )
-    parser.add_argument("--task_id", type=str, help="sd_train.id")
     parser.add_argument(
         "--logging_dir",
         type=str,

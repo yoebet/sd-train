@@ -39,7 +39,7 @@ from train.class_images import gen_class_images
 from train.datasets import DreamBoothDataset, collate_fn, tokenize_prompt
 from train.hf_repo import put_to_hf
 from train.train_args import parse_args
-from train.validation import log_validation
+from train.validate_and_test import log_validation, log_test
 from train.convert_to_original import hf_to_original
 from train.fix_conversion import fix_diffusers_model_conversion
 
@@ -107,8 +107,10 @@ def main(args):
     logging_dir = Path(args.logging_dir)
     model_output_dir = Path(args.output_dir, 'model')
     checkpoints_dir = Path(args.output_dir, 'checkpoints')
+    test_output_dir = Path(args.output_dir, 'test')
     args.__setattr__('model_output_dir', str(model_output_dir))
     args.__setattr__('checkpoints_dir', str(checkpoints_dir))
+    args.__setattr__('test_output_dir', str(test_output_dir))
 
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass
@@ -669,7 +671,7 @@ def main(args):
             if global_step >= args.max_train_steps:
                 break
 
-    # Create the pipeline using using the trained modules and save it.
+    # Create the pipeline using the trained modules and save it.
     accelerator.wait_for_everyone()
     if accelerator.is_main_process:
         pipeline_args = {}
@@ -701,6 +703,8 @@ def main(args):
         pipeline.scheduler = pipeline.scheduler.from_config(pipeline.scheduler.config, **scheduler_args)
 
         pipeline.save_pretrained(args.model_output_dir)
+
+        images = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
 
         model_file = f'{args.model_output_dir}/model.safetensors'
         hf_to_original(args.model_output_dir, model_file)

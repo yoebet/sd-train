@@ -283,6 +283,16 @@ def parse_args(input_args=None):
             " and logging the images."
         ),
     )
+    # parser.add_argument(
+    #     "--test_prompts_file",
+    #     type=str,
+    #     default=None,
+    # )
+    parser.add_argument(
+        "--num_test_images",
+        type=int,
+        default=16,
+    )
     parser.add_argument(
         "--mixed_precision",
         type=str,

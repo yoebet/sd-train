@@ -152,7 +152,7 @@ def log_test(
     pipeline.set_progress_bar_config(disable=True)
 
     generator = None if args.seed is None else torch.Generator(device=accelerator.device).manual_seed(args.seed)
-    image_and_args = []
+    image_args_list = []
     for i in range(args.num_test_images):
         test_args = test_prompts[i % n_prompts]
         prompt = test_args.get('prompt')
@@ -168,7 +168,7 @@ def log_test(
             logger.info(f'test ({i + 1}): ...')
         with torch.autocast("cuda"):
             image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
-        image_and_args.append({**pipeline_args, 'image': image})
+        image_args_list.append((image, pipeline_args))
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         image_hash = hashlib.sha1(img_byte_arr.getvalue()).hexdigest()
@@ -177,18 +177,19 @@ def log_test(
 
     for tracker in accelerator.trackers:
         if tracker.name == "tensorboard":
-            np_images = np.stack([np.asarray(image_and_arg.image) for image_and_arg in image_and_args])
+            np_images = np.stack([np.asarray(image_args[0]) for image_args in image_args_list])
             tracker.writer.add_images("test", np_images, global_step, dataformats="NHWC")
         if tracker.name == "wandb":
             tracker.log(
                 {
                     "test": [
-                        wandb.Image(image_and_arg.image, caption=f"{i}: {image_and_arg.prompt}") for
-                        i, image_and_arg in enumerate(image_and_args)
+                        wandb.Image(img,
+                                    caption=f"{i}: {gen_args.get('prompt')}")
+                        for i, (img, gen_args) in enumerate(image_args_list)
                     ]
                 }
             )
 
     torch.cuda.empty_cache()
 
-    return image_and_args
+    return image_args_list

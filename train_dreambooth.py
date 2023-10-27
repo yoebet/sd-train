@@ -716,14 +716,14 @@ def main(args):
 
         pipeline.save_pretrained(args.model_output_dir)
 
-        image_and_args = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
+        image_args_list = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
 
         model_file = f'{args.model_output_dir}/model.safetensors'
         hf_to_original(args.model_output_dir, model_file)
         fix_diffusers_model_conversion(model_file)
 
         if args.push_to_hub:
-            put_to_hf(args, pipeline=pipeline, image_and_args=image_and_args)
+            put_to_hf(args, pipeline=pipeline, image_args_list=image_args_list)
 
     accelerator.end_training()
 

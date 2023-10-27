@@ -85,7 +85,7 @@ Authorization: {{auth}}
     "num_class_images": 20,
     "mixed_precision": "fp16",
     "prior_generation_precision": "fp16",
-    "enable_xformers_memory_efficient_attention": true,
+    "xformers_attention": true,
     "use_8bit_adam": true,
     "train_batch_size": 2,
     "gradient_accumulation_steps": 4
@@ -135,25 +135,23 @@ Authorization: {{auth}}
   },
   "train": {
     "basic": {
-      "enable_xformers_memory_efficient_attention": true,
-      "mixed_precision": "fp16",
-      "use_8bit_adam": true,
-      "train_batch_size": 1,
-      "sample_batch_size": 4,
-      "gradient_accumulation_steps": 4,
-      "max_train_steps": 1000,
       "pretrained_model_name_or_path": null,
       "base_model_name": "dreamshaper_8",
-      "base_model_file_name": null
+      "base_model_file_name": null,
+      "instance_prompt": "a photo of tishi man",
+      "xformers_attention": true,
+      "mixed_precision": "fp16",
+      "use_8bit_adam": true,
+      "train_batch_size": 2,
+      "sample_batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "max_train_steps": 200
     },
     "prior": {
       "with_prior_preservation": true,
       "prior_generation_precision": "fp16",
       "num_class_images": 100,
-      "class_prompt": "a man"
-    },
-    "instance": {
-      "instance_prompt": "tishi man"
+      "class_prompt": "a photo of a man"
     }
   }
 }

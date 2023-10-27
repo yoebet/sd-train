@@ -117,6 +117,9 @@ def main(args):
     if os.path.exists(str(validations_dir)):
         shutil.rmtree(str(validations_dir))
 
+    if args.validation_prompt is None:
+        args.__setattr__('validation_prompt', args.instance_prompt)
+
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass
     elif args.base_model_single_file is not None:
@@ -657,7 +660,7 @@ def main(args):
                         accelerator.save_state(save_path)
                         logger.info(f"Saved state to {save_path}")
 
-                    if args.validation_prompt is not None and global_step % args.validation_steps == 0:
+                    if global_step % args.validation_steps == 0:
                         log_validation(
                             text_encoder,
                             tokenizer,

@@ -124,7 +124,7 @@ def launch(config, task, launch_options, train_params, logger=None):
         if accelerate_params is None:
             accelerate_args = []
         else:
-            config_file = accelerate_params.get('config_file', None)
+            config_file = accelerate_params.pop('config_file', None)
             if config_file is not None:
                 accelerate_config_file = config_file
             accelerate_args = build_args(accelerate_params, shell=shell)

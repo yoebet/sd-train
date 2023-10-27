@@ -124,10 +124,11 @@ def main(args):
             original_config_file=args.base_model_config_file,
         )
         hf_pretrained_dir = args.hf_pretrained_dir
-        pipe.save_pretrained(f'{hf_pretrained_dir}/{args.base_model_name}')
+        pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
+        pipe.save_pretrained(pretrained_model_path)
         del pipe
 
-        args.__setattr__('pretrained_model_name_or_path', hf_pretrained_dir)
+        args.__setattr__('pretrained_model_name_or_path', pretrained_model_path)
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=str(logging_dir))

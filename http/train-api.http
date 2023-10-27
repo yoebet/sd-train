@@ -31,9 +31,9 @@ Authorization: {{auth}}
   "task": {
     "task_id": "6543",
     "instance_images": [
-      "https://oss-prod.tishi.top/draw/sd/models/majicmixRealistic_v6-43331.jpg",
-      "https://oss-prod.tishi.top/draw/sd/models/manmaruMix_v20-86277.jpg",
-      "https://oss-prod.tishi.top/draw/sd/lora-models/33208-7934.jpg"
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png"
     ]
   }
 }
@@ -93,7 +93,7 @@ Authorization: {{auth}}
 }
 
 
-### launch - cuda
+### launch - cuda - 24G
 
 POST {{base}}/launch
 Content-Type: application/json
@@ -135,12 +135,21 @@ Authorization: {{auth}}
   },
   "train": {
     "basic": {
+      "enable_xformers_memory_efficient_attention": true,
+      "mixed_precision": "fp16",
+      "use_8bit_adam": true,
+      "train_batch_size": 1,
+      "sample_batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "max_train_steps": 1000,
       "pretrained_model_name_or_path": null,
       "base_model_name": "dreamshaper_8",
       "base_model_file_name": null
     },
     "prior": {
       "with_prior_preservation": true,
+      "prior_generation_precision": "fp16",
+      "num_class_images": 100,
       "class_prompt": "a man"
     },
     "instance": {
@@ -161,9 +170,9 @@ Authorization: {{auth}}
   "task": {
     "task_id": "aaa",
     "instance_images": [
-      "https://oss-prod.tishi.top/draw/sd/models/majicmixRealistic_v6-43331.jpg",
-      "https://oss-prod.tishi.top/draw/sd/models/manmaruMix_v20-86277.jpg",
-      "https://oss-prod.tishi.top/draw/sd/lora-models/33208-7934.jpg"
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png"
     ]
   },
   "launch": {

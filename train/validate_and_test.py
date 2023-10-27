@@ -117,7 +117,7 @@ def log_test(
 ):
     logger.info(
         f"Running test... \n Generating {args.num_test_images} images with prompt:"
-        f" {args.validation_prompt}."
+        f" {args.instance_prompt}."
     )
 
     test_output_dir = args.test_output_dir

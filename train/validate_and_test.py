@@ -154,9 +154,11 @@ def log_test(
     generator = None if args.seed is None else torch.Generator(device=accelerator.device).manual_seed(args.seed)
     images = []
     for i in range(args.num_test_images):
-        prompt_args = prompts[i % n_prompts]
-        pipeline_args = {"prompt": prompt_args.get('prompt'),
-                         "negative_prompt": prompt_args.get('negative_prompt')}
+        gen_args = prompts[i % n_prompts]
+        prompt = gen_args.get('prompt')
+        negative_prompt = gen_args.get('negative_prompt')
+        pipeline_args = {"prompt": f'{args.instance_prompt}, {prompt}',
+                         "negative_prompt": negative_prompt}
         with torch.autocast("cuda"):
             image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
         images.append(image)

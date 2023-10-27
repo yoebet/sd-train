@@ -50,9 +50,18 @@ Authorization: {{auth}}
   "task": {
     "task_id": "6543",
     "instance_images": [
-      "https://oss-prod.tishi.top/draw/sd/models/majicmixRealistic_v6-43331.jpg",
-      "https://oss-prod.tishi.top/draw/sd/models/manmaruMix_v20-86277.jpg",
-      "https://oss-prod.tishi.top/draw/sd/lora-models/33208-7934.jpg"
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2nxuaqnhcq8s10letfc2vjoyswjyu68u.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/hh1m9xy27uosqn2e6s81d5vbopwyyixx.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/3u7ppqtkcx4p6qri9fnw74azzxpwnagk.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/i04354mp1ikcbz9c4yeqt29occcw23lk.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2wbqklkav4xr3kczqgncg7rl7hlrd7e0.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2v0w65sxuy3zhhdyf0c5d0ddam3cu5j4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/xtrvk2d02gygn6s5gb7x2vodlp4fgp5o.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/19w6tsztk4zt4y769tom6noxiqwwbr6t.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/29vzoievmoiwwyipnc87f8hgzcpn49j8.jpg"
     ]
   },
   "launch": {
@@ -80,6 +89,63 @@ Authorization: {{auth}}
     "use_8bit_adam": true,
     "train_batch_size": 2,
     "gradient_accumulation_steps": 4
+  }
+}
+
+
+### launch - cuda
+
+POST {{base}}/launch
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+{
+  "task": {
+    "task_id": "DwiNbeYs54oXX9IU",
+    "user_id": "9NYzoSGc6l3GMYS6",
+    "train_type": "live",
+    "instance_images": [
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/h3mtchazmsups56sjry006pyrmck4bya.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2nxuaqnhcq8s10letfc2vjoyswjyu68u.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/hh1m9xy27uosqn2e6s81d5vbopwyyixx.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/3u7ppqtkcx4p6qri9fnw74azzxpwnagk.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/i04354mp1ikcbz9c4yeqt29occcw23lk.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2wbqklkav4xr3kczqgncg7rl7hlrd7e0.png",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/2v0w65sxuy3zhhdyf0c5d0ddam3cu5j4.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/xtrvk2d02gygn6s5gb7x2vodlp4fgp5o.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/19w6tsztk4zt4y769tom6noxiqwwbr6t.jpg",
+      "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/29vzoievmoiwwyipnc87f8hgzcpn49j8.jpg"
+    ]
+  },
+  "launch": {
+    "accelerate": {
+      "config_file": "c1.yaml",
+      "gpu_ids": "8"
+    },
+    "wrap_proxy": true,
+    "proxy_command": "proxychains4 -q",
+    "hf_hub_offline": true,
+    "hf_accelerate": true,
+    "dataset_version": 1,
+    "skip_download_dataset_if_exists": true
+  },
+  "train": {
+    "basic": {
+      "pretrained_model_name_or_path": null,
+      "base_model_name": "dreamshaper_8",
+      "base_model_file_name": null
+    },
+    "prior": {
+      "with_prior_preservation": true,
+      "class_prompt": "a man"
+    },
+    "instance": {
+      "instance_prompt": "tishi man"
+    }
   }
 }
 

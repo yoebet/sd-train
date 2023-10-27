@@ -127,6 +127,8 @@ def main(args):
         pipe.save_pretrained(f'{hf_pretrained_dir}/{args.base_model_name}')
         del pipe
 
+        args.__setattr__('pretrained_model_name_or_path', hf_pretrained_dir)
+
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=str(logging_dir))
 

@@ -109,16 +109,16 @@ def main(args):
     checkpoints_dir = Path(args.output_dir, 'checkpoints')
     test_output_dir = Path(args.output_dir, 'test')
     validations_dir = Path(args.output_dir, 'validations')
-    args.__setattr__('model_output_dir', str(model_output_dir))
-    args.__setattr__('checkpoints_dir', str(checkpoints_dir))
-    args.__setattr__('test_output_dir', str(test_output_dir))
-    args.__setattr__('validations_dir', str(validations_dir))
+    args.model_output_dir = str(model_output_dir)
+    args.checkpoints_dir = str(checkpoints_dir)
+    args.test_output_dir = str(test_output_dir)
+    args.validations_dir = str(validations_dir)
 
     if os.path.exists(str(validations_dir)):
         shutil.rmtree(str(validations_dir))
 
     if args.validation_prompt is None:
-        args.__setattr__('validation_prompt', args.instance_prompt)
+        args.validation_prompt = args.instance_prompt
 
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass

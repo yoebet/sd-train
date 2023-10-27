@@ -114,8 +114,6 @@ def main(args):
     args.test_output_dir = str(test_output_dir)
     args.validations_dir = str(validations_dir)
 
-    logger.info(args)
-
     if os.path.exists(str(validations_dir)):
         shutil.rmtree(str(validations_dir))
 
@@ -169,6 +167,9 @@ def main(args):
         datefmt="%m/%d/%Y %H:%M:%S",
         level=logging.INFO,
     )
+
+    logger.info(args)
+
     logger.info(accelerator.state, main_process_only=False)
     if accelerator.is_local_main_process:
         transformers.utils.logging.set_verbosity_warning()

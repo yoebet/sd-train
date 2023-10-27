@@ -74,7 +74,7 @@ def launch_task():
     logger.info(req)
     task = req.get('task')
     launch_options = req.get('launch')
-    train_params = req.get('train')
+    grouped_train_params = req.get('train')
 
     if launch_options is None:
         launch_options = {}
@@ -89,12 +89,15 @@ def launch_task():
     if task['task_id'] is None:
         task['task_id'] = prepare_res.get('task_id')
 
+    train_params = {}
+
     # grouped -> flatten
-    for k in train_params:
-        p = train_params[k]
+    for k in grouped_train_params:
+        p = grouped_train_params[k]
         if isinstance(p, dict):
-            train_params.pop(k)
             train_params.update(p)
+        else:
+            train_params[k] = p
 
     logger.info(train_params)
     result = launch(config,

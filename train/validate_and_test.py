@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import importlib
 import numpy as np
 import torch
@@ -30,6 +31,9 @@ def log_validation(
         f"Running validation... \n Generating {args.num_validation_images} images with prompt:"
         f" {args.validation_prompt}."
     )
+
+    output_dir = f'{args.validations_dir}/s_{global_step}'
+    os.makedirs(output_dir, exist_ok=True)
 
     pipeline_args = {}
 
@@ -88,6 +92,8 @@ def log_validation(
             image = Image.open(image)
             image = pipeline(**pipeline_args, image=image, generator=generator).images[0]
             images.append(image)
+    for i, image in enumerate(images):
+        image.save(f'{output_dir}/{i + 1}.png')
 
     for tracker in accelerator.trackers:
         if tracker.name == "tensorboard":
@@ -125,6 +131,10 @@ def log_test(
         shutil.rmtree(test_output_dir)
     os.makedirs(test_output_dir, exist_ok=True)
 
+    # test_prompts_file
+    prompts = json.load(open('train/test_prompts_live.json'))
+    n_prompts = len(prompts)
+
     # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
     scheduler_args = {}
 
@@ -140,12 +150,13 @@ def log_test(
     pipeline = pipeline.to(accelerator.device)
     pipeline.set_progress_bar_config(disable=True)
 
-    pipeline_args = {"prompt": args.instance_prompt}
-
     # run inference
     generator = None if args.seed is None else torch.Generator(device=accelerator.device).manual_seed(args.seed)
     images = []
     for i in range(args.num_test_images):
+        prompt_args = prompts[i % n_prompts]
+        pipeline_args = {"prompt": prompt_args.get('prompt'),
+                         "negative_prompt": prompt_args.get('negative_prompt')}
         with torch.autocast("cuda"):
             image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
         images.append(image)
@@ -163,7 +174,7 @@ def log_test(
             tracker.log(
                 {
                     "test": [
-                        wandb.Image(image, caption=f"{i}: {args.validation_prompt}") for i, image in enumerate(images)
+                        wandb.Image(image, caption=f"{i}: {args.instance_prompt}") for i, image in enumerate(images)
                     ]
                 }
             )

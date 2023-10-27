@@ -108,9 +108,14 @@ def main(args):
     model_output_dir = Path(args.output_dir, 'model')
     checkpoints_dir = Path(args.output_dir, 'checkpoints')
     test_output_dir = Path(args.output_dir, 'test')
+    validations_dir = Path(args.output_dir, 'validations')
     args.__setattr__('model_output_dir', str(model_output_dir))
     args.__setattr__('checkpoints_dir', str(checkpoints_dir))
     args.__setattr__('test_output_dir', str(test_output_dir))
+    args.__setattr__('validations_dir', str(validations_dir))
+
+    if os.path.exists(str(validations_dir)):
+        shutil.rmtree(str(validations_dir))
 
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass
@@ -270,7 +275,7 @@ def main(args):
     if not args.train_text_encoder:
         text_encoder.requires_grad_(False)
 
-    if args.enable_xformers_memory_efficient_attention:
+    if args.xformers_attention:
         if is_xformers_available():
             import xformers
 
@@ -653,7 +658,7 @@ def main(args):
                         logger.info(f"Saved state to {save_path}")
 
                     if args.validation_prompt is not None and global_step % args.validation_steps == 0:
-                        images = log_validation(
+                        log_validation(
                             text_encoder,
                             tokenizer,
                             unet,

@@ -123,14 +123,17 @@ def main(args):
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass
     elif args.base_model_single_file is not None:
+        tmp_model_file = Path(args.output_dir, 'tmp_model_file')
+        fix_diffusers_model_conversion(args.base_model_single_file, str(tmp_model_file))
         pipe = StableDiffusionPipeline.from_single_file(
-            args.base_model_single_file,
+            tmp_model_file,
             use_safetensors=True,
             load_safety_checker=False,
             local_files_only=True,
             dtype=torch.half,
             original_config_file=args.base_model_config_file,
         )
+        os.remove(tmp_model_file)
         hf_pretrained_dir = args.hf_pretrained_dir
         pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
         pipe.save_pretrained(pretrained_model_path)

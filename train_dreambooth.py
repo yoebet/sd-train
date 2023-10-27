@@ -123,7 +123,7 @@ def main(args):
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
         pass
     elif args.base_model_single_file is not None:
-        tmp_model_file = str(Path(args.output_dir, 'base_model_single_file.tmp'))
+        tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
         fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
         pipe = StableDiffusionPipeline.from_single_file(
             tmp_model_file,

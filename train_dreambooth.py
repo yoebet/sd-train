@@ -117,7 +117,7 @@ def main(args):
     if os.path.exists(str(validations_dir)):
         shutil.rmtree(str(validations_dir))
 
-    if args.validation_prompt is None:
+    if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
     if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
@@ -513,8 +513,6 @@ def main(args):
         # Only show the progress bar once on each machine.
         disable=not accelerator.is_local_main_process,
     )
-
-    images = []
 
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train()

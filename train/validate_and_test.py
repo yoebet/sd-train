@@ -134,6 +134,7 @@ def log_test(
     # test_prompts_file
     prompts = json.load(open('train/test_prompts_live.json'))
     n_prompts = len(prompts)
+    logger.info(f'test prompts: {n_prompts}')
 
     # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
     scheduler_args = {}
@@ -159,6 +160,8 @@ def log_test(
         negative_prompt = gen_args.get('negative_prompt')
         pipeline_args = {"prompt": f'{args.instance_prompt}, {prompt}',
                          "negative_prompt": negative_prompt}
+
+        logger.info(f'test args ({i + 1}): {pipeline_args}')
         with torch.autocast("cuda"):
             image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
         images.append(image)

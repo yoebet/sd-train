@@ -31,18 +31,21 @@ def before_request_callback():
             abort(400)
 
 
-@app.route('/check_mem_all/available', methods=('GET',))
-def check_mem_all():
-    import accelerate
-    return jsonify(accelerate.utils.get_max_memory())
-
-
 def trans_unit(bytes, unit):
     if unit is None:
         return bytes
     k = 1024
     div = {'B': 1, 'K': k, 'M': k * k, 'G': k * k * k}.get(unit.upper())
     return bytes / div
+
+
+@app.route('/check_mem_all/available', methods=('GET',))
+def check_mem_all():
+    unit = request.args.get('unit')
+    import accelerate
+    d = accelerate.utils.get_max_memory()
+    pairs = [(i, trans_unit(n, unit)) for i, n in d.items()]
+    return jsonify(pairs)
 
 
 @app.route('/check_mem/<device_index>', methods=('GET',))

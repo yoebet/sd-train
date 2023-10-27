@@ -34,7 +34,7 @@ def before_request_callback():
 @app.route('/check_mem_all/available', methods=('GET',))
 def check_mem_all():
     import accelerate
-    return accelerate.utils.get_max_memory()
+    return jsonify(accelerate.utils.get_max_memory())
 
 
 def trans_unit(bytes, unit):
@@ -49,13 +49,10 @@ def trans_unit(bytes, unit):
 def check_device_mem(device_index):
     device_index = int(device_index)
     unit = request.args.get('unit')
-    total = torch.cuda.get_device_properties(device_index).total_memory
-    reserved = torch.cuda.memory_reserved(device_index)
-    allocated = torch.cuda.memory_allocated(device_index)
+    free, total = torch.cuda.mem_get_info(device_index)
     return jsonify({
+        'free': trans_unit(free, unit),
         'total': trans_unit(total, unit),
-        'reserved': trans_unit(reserved, unit),
-        'allocated': trans_unit(allocated, unit)
     })
 
 

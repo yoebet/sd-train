@@ -1,8 +1,10 @@
+
+### root
 GET {{base}}
 Accept: application/json
 
 
-###
+### check_mem_all
 
 GET {{base}}/check_mem_all/available
 Content-Type: application/json
@@ -10,15 +12,15 @@ Accept: application/json
 Authorization: {{auth}}
 
 
-###
+### check_mem
 
-GET {{base}}/check_mem/0?unit=G
+GET {{base}}/check_mem/7?unit=G
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
 
 
-###
+### prepare_task
 
 POST {{base}}/prepare_task
 Content-Type: application/json
@@ -37,7 +39,7 @@ Authorization: {{auth}}
 }
 
 
-###
+### launch
 
 POST {{base}}/launch
 Content-Type: application/json
@@ -121,7 +123,7 @@ Authorization: {{auth}}
 }
 
 
-###
+### task - status
 
 POST {{base}}/task/aaa/status
 Content-Type: application/json
@@ -133,7 +135,7 @@ Authorization: {{auth}}
 }
 
 
-###
+### task - generate_single
 
 POST {{base}}/task/aaa/generate_single
 Content-Type: application/json
@@ -141,7 +143,7 @@ Accept: application/json
 Authorization: {{auth}}
 
 
-###
+### prepare_base_hf
 
 POST {{base}}/prepare_base_hf
 Content-Type: application/json
@@ -154,7 +156,7 @@ Authorization: {{auth}}
 }
 
 
-###
+### task - list test_images
 
 GET {{base}}/task/aaa/test_images
 Content-Type: application/json
@@ -162,7 +164,7 @@ Accept: application/json
 Authorization: {{auth}}
 
 
-###
+### task - get test_image
 
 GET {{base}}/task/aaa/test_images/1-1d2082ea7f2349bc398a7ab83123708fa9e9274a.jpg/b64
 Content-Type: application/json
@@ -170,7 +172,7 @@ Accept: application/json
 Authorization: {{auth}}
 
 
-###
+### task - release model
 
 POST {{base}}/task/aaa/release
 Content-Type: application/json

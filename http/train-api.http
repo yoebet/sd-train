@@ -1,6 +1,23 @@
 GET {{base}}
 Accept: application/json
 
+
+###
+
+GET {{base}}/check_mem_all/available
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+###
+
+GET {{base}}/check_mem/0?unit=G
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
 ###
 
 POST {{base}}/prepare_task

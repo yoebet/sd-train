@@ -2,6 +2,7 @@ import os
 import re
 import base64
 import shutil
+import torch
 from flask import Flask, jsonify, request, Response, abort
 from dotenv import dotenv_values
 from launch import launch
@@ -28,6 +29,34 @@ def before_request_callback():
         auth = request.headers.get('AUTHORIZATION')
         if not auth == app.config['AUTHORIZATION']:
             abort(400)
+
+
+@app.route('/check_mem_all/available', methods=('GET',))
+def check_mem_all():
+    import accelerate
+    return accelerate.utils.get_max_memory()
+
+
+def trans_unit(bytes, unit):
+    if unit is None:
+        return bytes
+    k = 1024
+    div = {'B': 1, 'K': k, 'M': k * k, 'G': k * k * k}.get(unit.upper())
+    return bytes / div
+
+
+@app.route('/check_mem/<device_index>', methods=('GET',))
+def check_device_mem(device_index):
+    device_index = int(device_index)
+    unit = request.args.get('unit')
+    total = torch.cuda.get_device_properties(device_index).total_memory
+    reserved = torch.cuda.memory_reserved(device_index)
+    allocated = torch.cuda.memory_allocated(device_index)
+    return jsonify({
+        'total': trans_unit(total, unit),
+        'reserved': trans_unit(reserved, unit),
+        'allocated': trans_unit(allocated, unit)
+    })
 
 
 @app.route('/prepare_task', methods=('POST',))

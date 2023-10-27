@@ -114,6 +114,8 @@ def main(args):
     args.test_output_dir = str(test_output_dir)
     args.validations_dir = str(validations_dir)
 
+    logger.info(args)
+
     if os.path.exists(str(validations_dir)):
         shutil.rmtree(str(validations_dir))
 
@@ -713,20 +715,18 @@ def main(args):
 
         pipeline.save_pretrained(args.model_output_dir)
 
-        images = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
+        image_and_args = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
 
         model_file = f'{args.model_output_dir}/model.safetensors'
         hf_to_original(args.model_output_dir, model_file)
         fix_diffusers_model_conversion(model_file)
 
         if args.push_to_hub:
-            put_to_hf(args, pipeline=pipeline, images=images)
+            put_to_hf(args, pipeline=pipeline, image_and_args=image_and_args)
 
     accelerator.end_training()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    print(args)
-    # print(args.instance_prompt)
     main(args)

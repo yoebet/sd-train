@@ -132,8 +132,8 @@ def log_test(
     os.makedirs(test_output_dir, exist_ok=True)
 
     # test_prompts_file
-    prompts = json.load(open('train/test_prompts_live.json'))
-    n_prompts = len(prompts)
+    test_prompts = json.load(open('train/test_prompts_live.json'))
+    n_prompts = len(test_prompts)
     logger.info(f'test prompts: {n_prompts}')
 
     # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
@@ -151,20 +151,24 @@ def log_test(
     pipeline = pipeline.to(accelerator.device)
     pipeline.set_progress_bar_config(disable=True)
 
-    # run inference
     generator = None if args.seed is None else torch.Generator(device=accelerator.device).manual_seed(args.seed)
-    images = []
+    image_and_args = []
     for i in range(args.num_test_images):
-        gen_args = prompts[i % n_prompts]
-        prompt = gen_args.get('prompt')
-        negative_prompt = gen_args.get('negative_prompt')
-        pipeline_args = {"prompt": f'{args.instance_prompt}, {prompt}',
-                         "negative_prompt": negative_prompt}
+        test_args = test_prompts[i % n_prompts]
+        prompt = test_args.get('prompt')
+        prompt = f'{args.instance_prompt}, {prompt}'
+        negative_prompt = test_args.get('negative_prompt')
+        pipeline_args = {"prompt": prompt,
+                         "negative_prompt": negative_prompt,
+                         }
 
-        logger.info(f'test args ({i + 1}): {pipeline_args}')
+        if i < n_prompts:
+            logger.info(f'test ({i + 1}): {pipeline_args}')
+        elif i == n_prompts:
+            logger.info(f'test ({i + 1}): ...')
         with torch.autocast("cuda"):
             image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
-        images.append(image)
+        image_and_args.append({**pipeline_args, 'image': image})
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         image_hash = hashlib.sha1(img_byte_arr.getvalue()).hexdigest()
@@ -173,17 +177,18 @@ def log_test(
 
     for tracker in accelerator.trackers:
         if tracker.name == "tensorboard":
-            np_images = np.stack([np.asarray(img) for img in images])
+            np_images = np.stack([np.asarray(image_and_arg.image) for image_and_arg in image_and_args])
             tracker.writer.add_images("test", np_images, global_step, dataformats="NHWC")
         if tracker.name == "wandb":
             tracker.log(
                 {
                     "test": [
-                        wandb.Image(image, caption=f"{i}: {args.instance_prompt}") for i, image in enumerate(images)
+                        wandb.Image(image_and_arg.image, caption=f"{i}: {image_and_arg.prompt}") for
+                        i, image_and_arg in enumerate(image_and_args)
                     ]
                 }
             )
 
     torch.cuda.empty_cache()
 
-    return images
+    return image_and_args

@@ -6,7 +6,7 @@ from diffusers import DiffusionPipeline, StableDiffusionPipeline
 
 def save_model_card(
         repo_id: str,
-        images=None,
+        image_and_args=None,
         base_model=str,
         train_text_encoder=False,
         prompt=str,
@@ -14,8 +14,8 @@ def save_model_card(
         pipeline: DiffusionPipeline = None,
 ):
     img_str = ""
-    for i, image in enumerate(images):
-        image.save(os.path.join(repo_folder, f"image_{i}.png"))
+    for i, image_and_arg in enumerate(image_and_args):
+        image_and_arg.image.save(os.path.join(repo_folder, f"image_{i}.png"))
         img_str += f"![img_{i}](./image_{i}.png)\n"
 
     yaml = f"""
@@ -45,7 +45,7 @@ DreamBooth for the text encoder was enabled: {train_text_encoder}.
         f.write(yaml + model_card)
 
 
-def put_to_hf(args, pipeline, images):
+def put_to_hf(args, pipeline, image_and_args):
     repo_id = args.hub_model_id
     if repo_id is None:
         if args.task_id is not None:
@@ -67,7 +67,7 @@ def put_to_hf(args, pipeline, images):
         base_model = args.base_model_name
     save_model_card(
         repo_id,
-        images=images,
+        image_and_args=image_and_args,
         base_model=base_model,
         train_text_encoder=args.train_text_encoder,
         prompt=args.instance_prompt,

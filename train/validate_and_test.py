@@ -130,7 +130,7 @@ def log_test(
         shutil.rmtree(test_output_dir)
     os.makedirs(test_output_dir, exist_ok=True)
 
-    if os.path.isfile(args.test_prompts_file):
+    if args.test_prompts_file is not None and os.path.isfile(args.test_prompts_file):
         test_prompts = json.load(open(args.test_prompts_file))
     else:
         logger.info(f'args.test_prompts_file not configured')

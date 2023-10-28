@@ -104,23 +104,16 @@ def encode_prompt(text_encoder, input_ids, attention_mask, text_encoder_use_atte
 
 
 def main(args):
-    logging_dir = Path(args.logging_dir)
-    model_output_dir = Path(args.output_dir, 'model')
-    checkpoints_dir = Path(args.output_dir, 'checkpoints')
-    test_output_dir = Path(args.output_dir, 'test')
-    validations_dir = Path(args.output_dir, 'validations')
-    args.model_output_dir = str(model_output_dir)
-    args.checkpoints_dir = str(checkpoints_dir)
-    args.test_output_dir = str(test_output_dir)
-    args.validations_dir = str(validations_dir)
-
-    if os.path.exists(str(validations_dir)):
-        shutil.rmtree(str(validations_dir))
+    args.model_output_dir = str(Path(args.output_dir, 'model'))
+    args.checkpoints_dir = str(Path(args.output_dir, 'checkpoints'))
+    args.test_output_dir = str(Path(args.output_dir, 'test'))
+    args.validations_dir = str(Path(args.output_dir, 'validations'))
 
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
-    if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
+    # if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
+    if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
         pass
     elif args.base_model_single_file is not None:
         tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
@@ -139,7 +132,7 @@ def main(args):
         pipe.save_pretrained(pretrained_model_path)
         del pipe
 
-        args.__setattr__('pretrained_model_name_or_path', pretrained_model_path)
+        args.pretrained_model_name_or_path = pretrained_model_path
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=str(logging_dir))
@@ -191,10 +184,11 @@ def main(args):
 
     # Handle the repository creation
     if accelerator.is_main_process:
-        if args.output_dir is not None:
-            os.makedirs(args.output_dir, exist_ok=True)
-            os.makedirs(args.model_output_dir, exist_ok=True)
-            os.makedirs(args.checkpoints_dir, exist_ok=True)
+        os.makedirs(args.output_dir, exist_ok=True)
+        os.makedirs(args.model_output_dir, exist_ok=True)
+        os.makedirs(args.checkpoints_dir, exist_ok=True)
+        if os.path.exists(args.validations_dir):
+            shutil.rmtree(args.validations_dir)
 
     # Load the tokenizer
     if args.tokenizer_name:

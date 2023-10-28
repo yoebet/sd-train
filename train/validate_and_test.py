@@ -122,8 +122,7 @@ def log_test(
         logger,
 ):
     logger.info(
-        f"Running test... \n Generating {args.num_test_images} images with prompt:"
-        f" {args.instance_prompt}."
+        f"Running test... \n Generating {args.num_test_images} images."
     )
 
     test_output_dir = args.test_output_dir
@@ -131,8 +130,14 @@ def log_test(
         shutil.rmtree(test_output_dir)
     os.makedirs(test_output_dir, exist_ok=True)
 
-    # test_prompts_file
-    test_prompts = json.load(open('train/test_prompts_live.json'))
+    if os.path.isfile(args.test_prompts_file):
+        test_prompts = json.load(open(args.test_prompts_file))
+    else:
+        logger.info(f'args.test_prompts_file not configured')
+        test_prompts = [
+            {'prompt': args.instance_prompt,
+             'negative_prompt': ''}
+        ]
     n_prompts = len(test_prompts)
     logger.info(f'test prompts: {n_prompts}')
 

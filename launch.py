@@ -45,10 +45,10 @@ def locate_base_model(train_params, data_base_dir, logger=None):
     hf_pretrained_dir = f'{data_base_dir}/hf-pretrained'
     train_params['hf_pretrained_dir'] = hf_pretrained_dir
 
-    pretrained_model_name_or_path = train_params.get('pretrained_model_name_or_path', None)
-    if pretrained_model_name_or_path and pretrained_model_name_or_path.count('/') > 1 and os.path.exists(
-            pretrained_model_name_or_path):
-        return
+    # pretrained_model_name_or_path = train_params.get('pretrained_model_name_or_path', None)
+    # if pretrained_model_name_or_path and pretrained_model_name_or_path.count('/') > 1 and os.path.exists(
+    #         pretrained_model_name_or_path):
+    #     return
 
     pretrained_base_model = f'{hf_pretrained_dir}/{base_model_name}'
     if os.path.isdir(pretrained_base_model):
@@ -92,18 +92,17 @@ def launch(config, task, launch_options, train_params, logger=None):
     accelerate_params = launch_options.get('accelerate', None)
     proxy_command = launch_options.get('proxy_command', 'proxychains4 -q')
 
-    # user_id = task_params.get('user_id', None)
-    # live/object/style
-    # train_type = task_params.get('train_type', None)
-    # base_model_name = task_params.get('base_model_name', None)
-    # instance_images=task_params.get('instance_images', None)
-
-    # pretrained_model_name_or_path
-
     task_id = task.get('task_id', None)
     if task_id is None:
         task_id = str(int(time.time()))
     train_params["task_id"] = task_id
+
+    train_type = task.get('train_type', None)
+    if train_type == 'live' or train_type == 'person':
+        test_prompts_file = 'train/test_prompts_live.json'
+    else:
+        test_prompts_file = 'train/test_prompts_object.json'
+    train_params['test_prompts_file'] = test_prompts_file
 
     train_params['logging_dir'] = f'{data_base_dir}/logs/hot'
     train_dir = f'{data_base_dir}/trains/t_{task_id}'

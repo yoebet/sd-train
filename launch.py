@@ -41,6 +41,7 @@ def locate_base_model(train_params, data_base_dir, logger=None):
     base_model_name = train_params.get('base_model_name', None)
     if base_model_name is None:
         raise Exception('missing base_model_name')
+    base_model_file_name = train_params.pop('base_model_file_name', None)
 
     hf_pretrained_dir = f'{data_base_dir}/hf-pretrained'
     train_params['hf_pretrained_dir'] = hf_pretrained_dir
@@ -59,7 +60,6 @@ def locate_base_model(train_params, data_base_dir, logger=None):
     if os.path.exists(sd_config_file):
         train_params['base_model_config_file'] = sd_config_file
 
-    base_model_file_name = train_params.get('base_model_file_name', None)
     checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
 
     if base_model_file_name is not None:

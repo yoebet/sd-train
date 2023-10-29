@@ -17,11 +17,11 @@ import transformers
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration, set_seed
-from huggingface_hub import create_repo, model_info, upload_folder
+from huggingface_hub import model_info
 from packaging import version
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
-from transformers import AutoTokenizer, PretrainedConfig
+from transformers import AutoTokenizer
 
 import diffusers
 from diffusers import (
@@ -36,12 +36,14 @@ from diffusers.training_utils import compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 from train.class_images import gen_class_images
-from train.datasets import DreamBoothDataset, collate_fn, tokenize_prompt
+from train.datasets import DreamBoothDataset, collate_fn
 from train.hf_repo import put_to_hf
 from train.train_args import parse_args
 from train.validate_and_test import log_validation, log_test
 from train.convert_to_original import hf_to_original
 from train.fix_conversion import fix_diffusers_model_conversion
+from train.checkpointing import try_resume_from_checkpoint, save_checkpoint
+from train.text_encoding import import_text_encoder_class, encode_prompt, pre_compute_text_embeddings
 
 # print(os.environ)
 
@@ -52,30 +54,6 @@ check_min_version("0.22.0.dev0")
 logger = get_logger(__name__)
 
 
-def import_model_class_from_model_name_or_path(pretrained_model_name_or_path: str, revision: str):
-    text_encoder_config = PretrainedConfig.from_pretrained(
-        pretrained_model_name_or_path,
-        subfolder="text_encoder",
-        revision=revision,
-    )
-    model_class = text_encoder_config.architectures[0]
-
-    if model_class == "CLIPTextModel":
-        from transformers import CLIPTextModel
-
-        return CLIPTextModel
-    elif model_class == "RobertaSeriesModelWithTransformation":
-        from diffusers.pipelines.alt_diffusion.modeling_roberta_series import RobertaSeriesModelWithTransformation
-
-        return RobertaSeriesModelWithTransformation
-    elif model_class == "T5EncoderModel":
-        from transformers import T5EncoderModel
-
-        return T5EncoderModel
-    else:
-        raise ValueError(f"{model_class} is not supported.")
-
-
 def model_has_vae(args):
     config_file_name = os.path.join("vae", AutoencoderKL.config_name)
     if os.path.isdir(args.pretrained_model_name_or_path):
@@ -84,23 +62,6 @@ def model_has_vae(args):
     else:
         files_in_repo = model_info(args.pretrained_model_name_or_path, revision=args.revision).siblings
         return any(file.rfilename == config_file_name for file in files_in_repo)
-
-
-def encode_prompt(text_encoder, input_ids, attention_mask, text_encoder_use_attention_mask=None):
-    text_input_ids = input_ids.to(text_encoder.device)
-
-    if text_encoder_use_attention_mask:
-        attention_mask = attention_mask.to(text_encoder.device)
-    else:
-        attention_mask = None
-
-    prompt_embeds = text_encoder(
-        text_input_ids,
-        attention_mask=attention_mask,
-    )
-    prompt_embeds = prompt_embeds[0]
-
-    return prompt_embeds
 
 
 def main(args):
@@ -208,7 +169,7 @@ def main(args):
         tokenizer = None
 
     # import correct text encoder class
-    text_encoder_cls = import_model_class_from_model_name_or_path(args.pretrained_model_name_or_path, args.revision)
+    text_encoder_cls = import_text_encoder_class(args.pretrained_model_name_or_path, args.revision)
 
     # Load scheduler and models
     noise_scheduler = DDPMScheduler.from_pretrained(
@@ -227,7 +188,9 @@ def main(args):
             subfolder="vae",
             revision=args.revision,
         )
+        logger.info('model has vae.')
     else:
+        logger.info('model not has vae.')
         vae = None
 
     unet = UNet2DConditionModel.from_pretrained(
@@ -274,6 +237,7 @@ def main(args):
 
     if vae is not None:
         vae.requires_grad_(False)
+        logger.info('not train vae')
 
     if not args.train_text_encoder:
         text_encoder.requires_grad_(False)
@@ -349,32 +313,12 @@ def main(args):
     )
 
     if args.pre_compute_text_embeddings:
-
-        def compute_text_embeddings(prompt):
-            with torch.no_grad():
-                text_inputs = tokenize_prompt(tokenizer, prompt, tokenizer_max_length=args.tokenizer_max_length)
-                prompt_embeds = encode_prompt(
-                    text_encoder,
-                    text_inputs.input_ids,
-                    text_inputs.attention_mask,
-                    text_encoder_use_attention_mask=args.text_encoder_use_attention_mask,
-                )
-
-            return prompt_embeds
-
-        pre_computed_encoder_hidden_states = compute_text_embeddings(args.instance_prompt)
-        validation_prompt_negative_prompt_embeds = compute_text_embeddings("")
-
-        if args.validation_prompt is not None:
-            validation_prompt_encoder_hidden_states = compute_text_embeddings(args.validation_prompt)
-        else:
-            validation_prompt_encoder_hidden_states = None
-
-        if args.class_prompt is not None:
-            pre_computed_class_prompt_encoder_hidden_states = compute_text_embeddings(args.class_prompt)
-        else:
-            pre_computed_class_prompt_encoder_hidden_states = None
-
+        (pre_computed_encoder_hidden_states,
+         validation_prompt_encoder_hidden_states,
+         validation_prompt_negative_prompt_embeds,
+         pre_computed_class_prompt_encoder_hidden_states) = pre_compute_text_embeddings(args,
+                                                                                        text_encoder,
+                                                                                        tokenizer)
         text_encoder = None
         tokenizer = None
 
@@ -458,7 +402,7 @@ def main(args):
     args.num_train_epochs = math.ceil(args.max_train_steps / num_update_steps_per_epoch)
 
     # We need to initialize the trackers we use, and also store our configuration.
-    # The trackers initializes automatically on the main process.
+    # The trackers initialize automatically on the main process.
     if accelerator.is_main_process:
         tracker_config = vars(copy.deepcopy(args))
         tracker_config.pop("validation_images")
@@ -476,39 +420,18 @@ def main(args):
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
     logger.info(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
     logger.info(f"  Total optimization steps = {args.max_train_steps}")
-    global_step = 0
-    first_epoch = 0
 
     # Potentially load in the weights and states from a previous save
     if args.resume_from_checkpoint:
-        if args.resume_from_checkpoint != "latest":
-            path = os.path.basename(args.resume_from_checkpoint)
-        else:
-            # Get the mos recent checkpoint
-            dirs = os.listdir(args.checkpoints_dir)
-            dirs = [d for d in dirs if d.startswith("checkpoint")]
-            dirs = sorted(dirs, key=lambda x: int(x.split("-")[1]))
-            path = dirs[-1] if len(dirs) > 0 else None
-
-        if path is None:
-            accelerator.print(
-                f"Checkpoint '{args.resume_from_checkpoint}' does not exist. Starting a new training run."
-            )
-            args.resume_from_checkpoint = None
-            initial_global_step = 0
-        else:
-            accelerator.print(f"Resuming from checkpoint {path}")
-            accelerator.load_state(os.path.join(args.checkpoints_dir, path))
-            global_step = int(path.split("-")[1])
-
-            initial_global_step = global_step
-            first_epoch = global_step // num_update_steps_per_epoch
+        global_step, first_epoch = try_resume_from_checkpoint(args,
+                                                              accelerator,
+                                                              num_update_steps_per_epoch)
     else:
-        initial_global_step = 0
+        global_step, first_epoch = 0, 0
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),
-        initial=initial_global_step,
+        initial=global_step,
         desc="Steps",
         # Only show the progress bar once on each machine.
         disable=not accelerator.is_local_main_process,
@@ -524,7 +447,7 @@ def main(args):
 
                 if vae is not None:
                     # Convert images to latent space
-                    model_input = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
+                    model_input = vae.encode(pixel_values).latent_dist.sample()
                     model_input = model_input * vae.config.scaling_factor
                 else:
                     model_input = pixel_values
@@ -634,29 +557,10 @@ def main(args):
 
                 if accelerator.is_main_process:
                     if global_step % args.checkpointing_steps == 0:
-                        # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
-                        if args.checkpoints_total_limit is not None:
-                            checkpoints = os.listdir(args.checkpoints_dir)
-                            checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
-                            checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
-
-                            # before we save the new checkpoint, we need to have at _most_ `checkpoints_total_limit - 1` checkpoints
-                            if len(checkpoints) >= args.checkpoints_total_limit:
-                                num_to_remove = len(checkpoints) - args.checkpoints_total_limit + 1
-                                removing_checkpoints = checkpoints[0:num_to_remove]
-
-                                logger.info(
-                                    f"{len(checkpoints)} checkpoints already exist, removing {len(removing_checkpoints)} checkpoints"
-                                )
-                                logger.info(f"removing checkpoints: {', '.join(removing_checkpoints)}")
-
-                                for removing_checkpoint in removing_checkpoints:
-                                    removing_checkpoint = os.path.join(args.checkpoints_dir, removing_checkpoint)
-                                    shutil.rmtree(removing_checkpoint)
-
-                        save_path = os.path.join(args.checkpoints_dir, f"checkpoint-{global_step}")
-                        accelerator.save_state(save_path)
-                        logger.info(f"Saved state to {save_path}")
+                        save_checkpoint(args,
+                                        accelerator,
+                                        global_step,
+                                        logger=logger)
 
                     if global_step % args.validation_steps == 0:
                         log_validation(

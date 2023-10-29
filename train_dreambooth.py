@@ -620,7 +620,7 @@ def main(args):
         image_args_list = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
 
         model_file = f'{args.model_output_dir}/model.safetensors'
-        hf_to_original(args.model_output_dir, model_file)
+        hf_to_original(args.model_output_dir, model_file, use_safetensors=True, half=True)
         fix_diffusers_model_conversion(model_file)
 
         if args.push_to_hub:

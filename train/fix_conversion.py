@@ -30,6 +30,8 @@ def fix_diffusers_model_conversion(load_path: str, save_path: str = None):
             new_key = new_key.replace('.to_k.bias', '.k.bias')
             new_key = new_key.replace('.to_v.weight', '.v.weight')
             new_key = new_key.replace('.to_v.bias', '.v.bias')
+            if 'mid.attn_1.' in k and v.shape == (512, 512):
+                v = v[:, :, None, None]
         new_tensors[new_key] = v
 
     # save

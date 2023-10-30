@@ -88,8 +88,8 @@ def determine_class_data_dir(train_params, data_base_dir, logger=None):
     class_prompt = train_params.get('class_prompt')
     p_hash = hashlib.md5(class_prompt.encode('utf8')).hexdigest()
     class_data_dir = f'{data_base_dir}/class-images/{base_model_name}--{p_hash}'
+    train_params['class_data_dir'] = class_data_dir
     if os.path.isdir(class_data_dir):
-        train_params['class_data_dir'] = class_data_dir
         return
     os.makedirs(class_data_dir, exist_ok=True)
     with open(f'{class_data_dir}/_meta.txt', 'x') as f:

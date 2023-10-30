@@ -12,6 +12,11 @@ def parse_args(input_args=None):
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
+        "--hf_repo_first",
+        action="store_true",
+        help="use pretrained model from hf-repo",
+    )
+    parser.add_argument(
         "--revision",
         type=str,
         default=None,

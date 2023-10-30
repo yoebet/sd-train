@@ -73,7 +73,6 @@ def main(args):
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
-    # if args.pretrained_model_name_or_path and args.pretrained_model_name_or_path.count('/') > 1:
     if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
         pass
     elif args.base_model_single_file is not None:

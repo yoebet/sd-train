@@ -5,6 +5,7 @@ from PIL import Image
 from PIL.ImageOps import exif_transpose
 from torch.utils.data import Dataset
 from torchvision import transforms
+from train.crop import UpperCrop
 
 
 def tokenize_prompt(tokenizer, prompt, tokenizer_max_length=None):
@@ -77,7 +78,7 @@ class DreamBoothDataset(Dataset):
         self.image_transforms = transforms.Compose(
             [
                 transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
-                transforms.CenterCrop(size) if center_crop else transforms.RandomCrop(size),
+                transforms.CenterCrop(size) if center_crop else UpperCrop(size) , # transforms.RandomCrop(size)
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5]),
             ]

@@ -5,6 +5,7 @@ import time
 import psutil
 import pathlib
 import logging
+import hashlib
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -42,14 +43,15 @@ def locate_base_model(train_params, data_base_dir, logger=None):
     if base_model_name is None:
         raise Exception('missing base_model_name')
     base_model_file_name = train_params.pop('base_model_file_name', None)
+    hf_repo_id = train_params.pop('hf_repo_id', None)
+    hf_repo_first = train_params.pop('hf_repo_first', False)
 
     hf_pretrained_dir = f'{data_base_dir}/hf-pretrained'
     train_params['hf_pretrained_dir'] = hf_pretrained_dir
 
-    # pretrained_model_name_or_path = train_params.get('pretrained_model_name_or_path', None)
-    # if pretrained_model_name_or_path and pretrained_model_name_or_path.count('/') > 1 and os.path.exists(
-    #         pretrained_model_name_or_path):
-    #     return
+    if hf_repo_id is not None and hf_repo_first:
+        train_params['pretrained_model_name_or_path'] = hf_repo_id
+        return
 
     pretrained_base_model = f'{hf_pretrained_dir}/{base_model_name}'
     if os.path.isdir(pretrained_base_model):
@@ -77,6 +79,23 @@ def locate_base_model(train_params, data_base_dir, logger=None):
             return
 
 
+def determine_class_data_dir(train_params, data_base_dir, logger=None):
+    base_model_name = train_params.get('base_model_name', None)
+    if not train_params.get('with_prior_preservation', False):
+        return
+    if train_params.get('class_data_dir') is not None:
+        return
+    class_prompt = train_params.get('class_prompt')
+    p_hash = hashlib.md5(class_prompt.encode('utf8')).hexdigest()
+    class_data_dir = f'{data_base_dir}/class-images/{base_model_name}--{p_hash}'
+    if os.path.isdir(class_data_dir):
+        train_params['class_data_dir'] = class_data_dir
+        return
+    os.makedirs(class_data_dir, exist_ok=True)
+    with open(f'{class_data_dir}/_meta.txt', 'x') as f:
+        f.write(f'prompt: {class_prompt}\n')
+
+
 def launch(config, task, launch_options, train_params, logger=None):
     if logger is None:
         logger = logging.getLogger('launch')
@@ -97,24 +116,29 @@ def launch(config, task, launch_options, train_params, logger=None):
         task_id = str(int(time.time()))
     train_params["task_id"] = task_id
 
+    locate_base_model(train_params, data_base_dir, logger=logger)
+
     train_type = task.get('train_type', None)
-    if train_type == 'live' or train_type == 'person':
+    if train_type == 'live':
         test_prompts_file = 'train/test_prompts_live.json'
     else:
         test_prompts_file = 'train/test_prompts_object.json'
     train_params['test_prompts_file'] = test_prompts_file
 
+    if train_params.get('center_crop', None) is None:
+        train_params['center_crop'] = train_type != 'live'
+
     train_params['logging_dir'] = f'{data_base_dir}/logs/hot'
     train_dir = f'{data_base_dir}/trains/t_{task_id}'
     train_params['instance_data_dir'] = f'{train_dir}/instance_images'
 
-    if train_params.get('with_prior_preservation'):
-        train_params['class_data_dir'] = f'{train_dir}/class_images'
+    determine_class_data_dir(train_params, data_base_dir, logger=logger)
 
     train_params['output_dir'] = train_dir
     log_file = f'{train_dir}/log-{str(int(time.time()))}.txt'
 
-    locate_base_model(train_params, data_base_dir, logger=logger)
+    # with open(f'{train_dir}/_meta.txt', 'w') as f:
+    #     f.write(f'class_prompt: {class_prompt}\n')
 
     train_args = build_args(train_params, shell=shell)
     script_file = f'{launch_script_dir}/train_dreambooth.py'

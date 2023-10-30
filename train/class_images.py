@@ -1,3 +1,4 @@
+import re
 import hashlib
 from pathlib import Path
 import torch
@@ -6,11 +7,13 @@ from tqdm.auto import tqdm
 from train.datasets import PromptDataset
 
 
-def gen_class_images(args,accelerator,logger):
+def gen_class_images(args, accelerator, logger):
     class_images_dir = Path(args.class_data_dir)
     if not class_images_dir.exists():
         class_images_dir.mkdir(parents=True)
-    cur_class_images = len(list(class_images_dir.iterdir()))
+    c_files = class_images_dir.iterdir()
+    c_files = filter(lambda f: re.match(r'\d+-', f.name), c_files)
+    cur_class_images = len(list(c_files))
 
     if cur_class_images < args.num_class_images:
         torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32

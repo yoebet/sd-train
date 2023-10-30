@@ -113,6 +113,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     accelerate_params = launch_options.get('accelerate', None)
     proxy_command = launch_options.get('proxy_command', 'proxychains4 -q')
 
+    user_id = task.get('user_id', None)
     task_id = task.get('task_id', None)
     if task_id is None:
         task_id = str(int(time.time()))
@@ -135,6 +136,23 @@ def launch(config, task, launch_options, train_params, logger=None):
     train_params['instance_data_dir'] = f'{train_dir}/instance_images'
 
     determine_class_data_dir(train_params, data_base_dir, logger=logger)
+
+    os.makedirs(train_dir, exist_ok=True)
+    with open(f'{train_dir}/_meta.txt', 'x') as f:
+        class_prompt = train_params.get('class_prompt')
+        instance_prompt = train_params.get('instance_prompt')
+        base_model_name = train_params.get('base_model_name')
+        class_data_dir = train_params.get('class_data_dir')
+        max_train_steps = train_params.get('max_train_steps')
+        f.write(f'task_id: {task_id}\n'
+                f'user_id: {user_id}\n'
+                f'train_type: {train_type}\n'
+                f'base_model_name: {base_model_name}\n'
+                f'class_prompt: {class_prompt}\n'
+                f'instance_prompt: {instance_prompt}\n'
+                f'class_data_dir: {class_data_dir}\n'
+                f'max_train_steps: {max_train_steps}\n'
+                f'')
 
     train_params['output_dir'] = train_dir
     log_file = f'{train_dir}/log-{str(int(time.time()))}.txt'

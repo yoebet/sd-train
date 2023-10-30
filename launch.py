@@ -1,4 +1,5 @@
 import os
+import re
 import signal
 import subprocess
 import time
@@ -86,8 +87,9 @@ def determine_class_data_dir(train_params, data_base_dir, logger=None):
     if train_params.get('class_data_dir') is not None:
         return
     class_prompt = train_params.get('class_prompt')
-    p_hash = hashlib.md5(class_prompt.encode('utf8')).hexdigest()
-    class_data_dir = f'{data_base_dir}/class-images/{base_model_name}--{p_hash}'
+    filename_part = re.compile(r'[^-a-zA-Z0-9,]').sub('_', class_prompt)[:30]
+    p_hash = hashlib.md5(class_prompt.encode('utf8')).hexdigest()[:16]
+    class_data_dir = f'{data_base_dir}/class-images/{base_model_name}--{filename_part}--{p_hash}'
     train_params['class_data_dir'] = class_data_dir
     if os.path.isdir(class_data_dir):
         return

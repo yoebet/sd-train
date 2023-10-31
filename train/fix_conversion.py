@@ -39,5 +39,6 @@ def fix_diffusers_model_conversion(load_path: str, save_path: str = None):
 
 
 if __name__ == '__main__':
-    file = sys.argv[1]
-    fix_diffusers_model_conversion(file)
+    src_file = sys.argv[1]
+    dest_file = sys.argv[2] if len(sys.argv) > 2 else src_file
+    fix_diffusers_model_conversion(src_file, dest_file)

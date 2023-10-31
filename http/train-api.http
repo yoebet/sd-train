@@ -103,7 +103,7 @@ Authorization: {{auth}}
 
 {
   "task": {
-    "task_id": "DwiNbeYs54oXX9IU",
+    "task_id": "222",
     "user_id": "9NYzoSGc6l3GMYS6",
     "train_type": "live",
     "instance_images": [
@@ -123,7 +123,6 @@ Authorization: {{auth}}
   },
   "launch": {
     "accelerate": {
-      "config_file": "c1.yaml",
       "gpu_ids": "8"
     },
     "wrap_proxy": true,
@@ -142,16 +141,25 @@ Authorization: {{auth}}
       "xformers_attention": true,
       "mixed_precision": "fp16",
       "use_8bit_adam": true,
-      "train_batch_size": 2,
+      "train_batch_size": 1,
       "sample_batch_size": 4,
-      "gradient_accumulation_steps": 4,
-      "max_train_steps": 200
+      "gradient_accumulation_steps": 1,
+      "max_train_steps": 100
     },
     "prior": {
       "with_prior_preservation": true,
       "prior_generation_precision": "fp16",
-      "num_class_images": 100,
+      "num_class_images": 20,
       "class_prompt": "a photo of a man"
+    },
+    "token": {
+      "train_text_encoder": true
+    },
+    "validation": {
+      "validation_steps": 200
+    },
+    "lr": {
+      "lr_warmup_steps": 0
     }
   }
 }
@@ -231,7 +239,15 @@ Authorization: {{auth}}
 
 ### task - list test_images
 
-GET {{base}}/task/aaa/test_images
+GET {{base}}/task/aaa/_/test_images
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+
+### task - get test_image file
+
+GET {{base}}/task/aaa/2023-10-31/test_images/2-fb04f6d452773a06dc738922f748f50b57d468a3.jpg
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
@@ -239,7 +255,7 @@ Authorization: {{auth}}
 
 ### task - get test_image
 
-GET {{base}}/task/aaa/test_images/1-1d2082ea7f2349bc398a7ab83123708fa9e9274a.jpg/b64
+GET {{base}}/task/aaa/_/test_images/1-1d2082ea7f2349bc398a7ab83123708fa9e9274a.jpg/b64
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}

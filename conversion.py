@@ -38,9 +38,16 @@ def convert_base_original_to_hf(config, base_model_name, ext=None, logger=None):
     return True
 
 
-def convert_trained_to_original(config, task_id):
+def convert_trained_to_original(config, task_id, sub_dir=None):
     data_base_dir = config['DATA_BASE_DIR']
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    if sub_dir == '_':
+        sub_dir = None
+
+    trains_dir = f'{data_base_dir}/trains'
+    if sub_dir is not None:
+        train_dir = f'{trains_dir}/{sub_dir}/t_{task_id}'
+    else:
+        train_dir = f'{trains_dir}/t_{task_id}'
 
     model_output_dir = f'{train_dir}/model'
     if not os.path.isdir(model_output_dir):

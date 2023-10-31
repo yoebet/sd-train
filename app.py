@@ -3,11 +3,12 @@ import re
 import base64
 import shutil
 import torch
-from flask import Flask, jsonify, request, Response, abort
+from flask import Flask, jsonify, request, Response, abort, send_file
 from dotenv import dotenv_values
 from launch import launch
 from prepare import prepare_instance_images
 from conversion import convert_base_original_to_hf, convert_trained_to_original
+from train.dirs import get_train_dir
 
 app = Flask(__name__)
 
@@ -175,10 +176,11 @@ def check_task_status(task_id):
         })
 
 
-@app.route('/task/<task_id>/generate_single', methods=('POST',))
-def generate_single(task_id):
+@app.route('/task/<task_id>/<sub_dir>/generate_single', methods=('POST',))
+def generate_single(task_id, sub_dir):
     success = convert_trained_to_original(app.config,
-                                          task_id)
+                                          task_id,
+                                          sub_dir)
     return jsonify({
         'success': success
     })
@@ -198,10 +200,10 @@ def prepare_base_hf():
     })
 
 
-@app.route('/task/<task_id>/test_images', methods=('GET',))
-def list_test_images(task_id):
+@app.route('/task/<task_id>/<sub_dir>/test_images', methods=('GET',))
+def list_test_images(task_id, sub_dir):
     data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
     test_output_dir = f'{train_dir}/test'
     if not os.path.isdir(test_output_dir):
         return jsonify({
@@ -217,10 +219,18 @@ def list_test_images(task_id):
     })
 
 
-@app.route('/task/<task_id>/test_images/<filename>/b64', methods=('GET',))
-def get_test_image(task_id, filename):
+@app.route('/task/<task_id>/<sub_dir>/test_images/<filename>', methods=('GET',))
+def get_test_image_file(task_id, sub_dir, filename):
     data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+    image_path = f'{train_dir}/test/{filename}'
+    return send_file(image_path)
+
+
+@app.route('/task/<task_id>/test_images/<filename>/b64', methods=('GET',))
+def get_test_image(task_id, sub_dir, filename):
+    data_base_dir = app.config['DATA_BASE_DIR']
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
     image_path = f'{train_dir}/test/{filename}'
     if not os.path.isfile(image_path):
         return jsonify({
@@ -239,6 +249,7 @@ def get_test_image(task_id, filename):
 @app.route('/task/<task_id>/release', methods=('POST',))
 def release_model(task_id):
     req = request.get_json()
+    sub_dir = req.get('sub_dir', None)
     target_model_name = req.get('target_model_name')
     if target_model_name is None:
         base_model_name = req.get('base_model_name')
@@ -250,7 +261,9 @@ def release_model(task_id):
     data_base_dir = app.config['DATA_BASE_DIR']
     checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
 
-    model_file = f'{data_base_dir}/trains/t_{task_id}/model/model.safetensors'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+
+    model_file = f'{train_dir}/model/model.safetensors'
     if not os.path.isfile(model_file):
         return jsonify({
             'success': False,

@@ -7,6 +7,7 @@ import psutil
 import pathlib
 import logging
 import hashlib
+from train.dirs import get_train_dir, get_logging_dir
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -87,7 +88,7 @@ def determine_class_data_dir(train_params, data_base_dir, logger=None):
     if train_params.get('class_data_dir') is not None:
         return
     class_prompt = train_params.get('class_prompt')
-    filename_part = re.compile(r'[^-a-zA-Z0-9,]').sub('_', class_prompt)[:30]
+    filename_part = re.compile(r'[^-a-zA-Z0-9,]').sub('_', class_prompt)[:50]
     p_hash = hashlib.md5(class_prompt.encode('utf8')).hexdigest()[:16]
     class_data_dir = f'{data_base_dir}/class-images/{base_model_name}--{filename_part}--{p_hash}'
     train_params['class_data_dir'] = class_data_dir
@@ -110,7 +111,6 @@ def launch(config, task, launch_options, train_params, logger=None):
     shell = launch_options.get('shell', False)
     wrap_proxy = launch_options.get('wrap_proxy', False)
     hf_accelerate = launch_options.get('hf_accelerate', False)
-    accelerate_params = launch_options.get('accelerate', None)
     proxy_command = launch_options.get('proxy_command', 'proxychains4 -q')
 
     user_id = task.get('user_id', None)
@@ -131,8 +131,10 @@ def launch(config, task, launch_options, train_params, logger=None):
     if train_params.get('center_crop', None) is None:
         train_params['center_crop'] = train_type != 'live'
 
-    train_params['logging_dir'] = f'{data_base_dir}/logs/hot'
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    sub_dir = task.get('sub_dir', None)
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+
+    train_params['logging_dir'] = get_logging_dir(data_base_dir, sub_dir=sub_dir)
     train_params['instance_data_dir'] = f'{train_dir}/instance_images'
 
     determine_class_data_dir(train_params, data_base_dir, logger=logger)
@@ -164,6 +166,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     script_file = f'{launch_script_dir}/train_dreambooth.py'
 
     if hf_accelerate:
+        accelerate_params = launch_options.get('accelerate', None)
         if accelerate_params is None:
             accelerate_args = []
         else:

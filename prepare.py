@@ -6,6 +6,7 @@ import hashlib
 import shutil
 import logging
 import re
+from train.dirs import get_train_dir
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -27,7 +28,15 @@ def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
         logger.warning(f'prepare (task_id={task_id}): no instance_images')
         return {'task_id': task_id}
 
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    sub_dir = task.get('sub_dir', None)
+    if sub_dir == '_':
+        sub_dir = None
+
+    trains_dir = f'{data_base_dir}/trains'
+    if sub_dir is not None:
+        train_dir = f'{trains_dir}/{sub_dir}/t_{task_id}'
+    else:
+        train_dir = f'{trains_dir}/t_{task_id}'
     instance_data_dir = f'{train_dir}/instance_images'
 
     if os.path.exists(instance_data_dir):

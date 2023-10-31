@@ -76,17 +76,26 @@ def main(args):
     if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
         pass
     elif args.base_model_single_file is not None:
-        tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
-        fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
-        pipe = StableDiffusionPipeline.from_single_file(
-            tmp_model_file,
-            use_safetensors=True,
-            load_safety_checker=False,
-            local_files_only=True,
-            dtype=torch.half,
-            original_config_file=args.base_model_config_file,
-        )
-        os.remove(tmp_model_file)
+        load_params = {
+            'use_safetensors': True,
+            'load_safety_checker': False,
+            'local_files_only': True,
+            'dtype': torch.half,
+            'original_config_file': args.base_model_config_file,
+        }
+        if args.base_model_single_file.endswith('.safetensors'):
+            tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
+            fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
+            pipe = StableDiffusionPipeline.from_single_file(
+                tmp_model_file,
+                **load_params,
+            )
+            os.remove(tmp_model_file)
+        else:
+            pipe = StableDiffusionPipeline.from_single_file(
+                args.base_model_single_file,
+                **load_params,
+            )
         hf_pretrained_dir = args.hf_pretrained_dir
         pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
         pipe.save_pretrained(pretrained_model_path)

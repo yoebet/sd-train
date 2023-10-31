@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import torch
 from torch import Tensor
 from torchvision.transforms import RandomCrop
 import torchvision.transforms.functional as F
@@ -19,8 +20,15 @@ class UpperCrop(RandomCrop):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        left = (w - tw) / 2
-        return 0, left, th, tw
+        wd = w - tw
+        hd = h - th
+        wp = int(wd / 4)
+        hp = int(hd / 3)
+        top = torch.randint(0, hd - hp + 1, size=(1,)).item()
+        left = torch.randint(wp, wd - wp + 1, size=(1,)).item()
+        # top = 0
+        # left = (w - tw) / 2
+        return top, left, th, tw
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__(size, padding, pad_if_needed, fill, padding_mode)

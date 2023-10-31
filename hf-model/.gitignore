@@ -1,0 +1,4 @@
+*.safetensors
+*.ckpt
+*.bin
+vocab.json

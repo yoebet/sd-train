@@ -110,9 +110,9 @@ def launch_task():
     return jsonify(result)
 
 
-def check_train_dirs(task_id, dir_names):
+def check_train_dirs(task_id, dir_names, sub_dir=None):
     data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = f'{data_base_dir}/trains/t_{task_id}'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
     if not os.path.exists(train_dir):
         return False
     return all([os.path.exists(f'{train_dir}/{dir}') for dir in dir_names])
@@ -123,6 +123,7 @@ def check_task_status(task_id):
     req = request.get_json()
     pid = req.get('root_pid')
     pid = int(pid)
+    sub_dir = req.get('sub_dir')
 
     import psutil
 
@@ -130,8 +131,10 @@ def check_task_status(task_id):
 
     if psutil.pid_exists(pid):
         rp = psutil.Process(pid)
-        # Python
-        logger.info(rp.name())
+        pname = rp.name()
+        logger.info(pname)
+        if 'Python' not in pname:
+            raise f'wrong pid: {pid}, {pname}'
         try:
             logger.info(rp.cmdline())
         except psutil.ZombieProcess:
@@ -162,7 +165,7 @@ def check_task_status(task_id):
             'task_status': 'running',
         })
 
-    dir_ok = check_train_dirs(task_id, ['test'])
+    dir_ok = check_train_dirs(task_id, ['test'], sub_dir)
     if dir_ok:
         return jsonify({
             'success': True,

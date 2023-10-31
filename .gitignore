@@ -7,4 +7,4 @@
 /http/http-client.private.env.json
 .DS_Store
 __pycache__/
-nohup.out
+nohup.out*

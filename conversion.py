@@ -3,6 +3,7 @@ import torch
 from diffusers import StableDiffusionPipeline
 from train.convert_to_original import hf_to_original
 from train.fix_conversion import fix_diffusers_model_conversion
+from train.dirs import get_train_dir
 
 
 def convert_base_original_to_hf(config, base_model_name, ext=None, logger=None):
@@ -40,14 +41,7 @@ def convert_base_original_to_hf(config, base_model_name, ext=None, logger=None):
 
 def convert_trained_to_original(config, task_id, sub_dir=None):
     data_base_dir = config['DATA_BASE_DIR']
-    if sub_dir == '_':
-        sub_dir = None
-
-    trains_dir = f'{data_base_dir}/trains'
-    if sub_dir is not None:
-        train_dir = f'{trains_dir}/{sub_dir}/t_{task_id}'
-    else:
-        train_dir = f'{trains_dir}/t_{task_id}'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
 
     model_output_dir = f'{train_dir}/model'
     if not os.path.isdir(model_output_dir):

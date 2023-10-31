@@ -133,15 +133,20 @@ def check_task_status(task_id):
         rp = psutil.Process(pid)
         pname = rp.name()
         logger.info(pname)
-        if 'Python' not in pname:
-            raise f'wrong pid: {pid}, {pname}'
+        if 'Python' not in pname and 'accelerate' not in pname:
+            # raise Exception(f'wrong pid: {pid}, {pname}')
+            return jsonify({
+                'success': True,
+                'task_status': 'failed',
+                'failure_reason': 'wpn'
+            })
         try:
             logger.info(rp.cmdline())
         except psutil.ZombieProcess:
             return jsonify({
                 'success': True,
                 'task_status': 'failed',
-                'failure_reason': 'unknown'
+                'failure_reason': 'zomb'
             })
         except psutil.AccessDenied:
             logger.error('AccessDenied')
@@ -175,7 +180,7 @@ def check_task_status(task_id):
         return jsonify({
             'success': True,
             'task_status': 'failed',
-            'failure_reason': 'unknown'
+            'failure_reason': 'ntest'
         })
 
 

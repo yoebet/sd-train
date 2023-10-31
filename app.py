@@ -133,7 +133,7 @@ def check_task_status(task_id):
         rp = psutil.Process(pid)
         pname = rp.name()
         logger.info(pname)
-        if 'Python' not in pname and 'accelerate' not in pname:
+        if 'accelerate' not in pname and 'python' not in pname:
             # raise Exception(f'wrong pid: {pid}, {pname}')
             return jsonify({
                 'success': True,

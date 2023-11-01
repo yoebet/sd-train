@@ -73,36 +73,6 @@ def main(args):
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
-    if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
-        pass
-    elif args.base_model_single_file is not None:
-        load_params = {
-            'use_safetensors': True,
-            'load_safety_checker': False,
-            'local_files_only': True,
-            'dtype': torch.half,
-            'original_config_file': args.base_model_config_file,
-        }
-        if args.base_model_single_file.endswith('.safetensors'):
-            tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
-            fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
-            pipe = StableDiffusionPipeline.from_single_file(
-                tmp_model_file,
-                **load_params,
-            )
-            os.remove(tmp_model_file)
-        else:
-            pipe = StableDiffusionPipeline.from_single_file(
-                args.base_model_single_file,
-                **load_params,
-            )
-        hf_pretrained_dir = args.hf_pretrained_dir
-        pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
-        pipe.save_pretrained(pretrained_model_path)
-        del pipe
-
-        args.pretrained_model_name_or_path = pretrained_model_path
-
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
 
@@ -112,6 +82,8 @@ def main(args):
         log_with=args.report_to,
         project_config=accelerator_project_config,
     )
+
+    logger.info(args)
 
     if args.report_to == "wandb":
         if not is_wandb_available():
@@ -133,7 +105,38 @@ def main(args):
         level=logging.INFO,
     )
 
-    logger.info(args)
+    if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
+        pass
+    elif args.base_model_single_file is not None:
+        load_params = {
+            'use_safetensors': True,
+            'load_safety_checker': False,
+            'local_files_only': True,
+            'dtype': torch.half,
+            'original_config_file': args.base_model_config_file,
+        }
+        tmp_model_file = None
+        if args.base_model_single_file.endswith('.safetensors'):
+            tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
+            fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
+            pipe = StableDiffusionPipeline.from_single_file(
+                tmp_model_file,
+                **load_params,
+            )
+        else:
+            pipe = StableDiffusionPipeline.from_single_file(
+                args.base_model_single_file,
+                **load_params,
+            )
+        hf_pretrained_dir = args.hf_pretrained_dir
+        pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
+        pipe.save_pretrained(pretrained_model_path)
+        del pipe
+        if tmp_model_file is not None:
+            os.remove(tmp_model_file)
+        logger.info(f'[base_model] save pretrained: {pretrained_model_path}')
+
+        args.pretrained_model_name_or_path = pretrained_model_path
 
     logger.info(accelerator.state, main_process_only=False)
     if accelerator.is_local_main_process:

@@ -56,7 +56,7 @@ def locate_base_model(train_params, data_base_dir, logger=None):
         return
 
     pretrained_base_model = f'{hf_pretrained_dir}/{base_model_name}'
-    if os.path.isdir(pretrained_base_model):
+    if os.path.isfile(f'{pretrained_base_model}/model_index.json'):
         train_params['pretrained_model_name_or_path'] = pretrained_base_model
         return
 

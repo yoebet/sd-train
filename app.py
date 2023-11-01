@@ -1,5 +1,6 @@
 import os
 import re
+from pprint import pformat
 import base64
 import shutil
 import torch
@@ -72,7 +73,7 @@ def prepare_task():
 @app.route('/launch', methods=('POST',))
 def launch_task():
     req = request.get_json()
-    logger.info(req)
+    logger.info(pformat(req))
     task = req.get('task')
     launch_options = req.get('launch')
     grouped_train_params = req.get('train')
@@ -100,7 +101,7 @@ def launch_task():
         else:
             train_params[k] = p
 
-    logger.info(train_params)
+    # logger.info(train_params)
     result = launch(config,
                     task,
                     launch_options,

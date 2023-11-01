@@ -95,7 +95,7 @@ def determine_class_data_dir(train_params, data_base_dir, logger=None):
     if os.path.isdir(class_data_dir):
         return
     os.makedirs(class_data_dir, exist_ok=True)
-    with open(f'{class_data_dir}/_meta.txt', 'x') as f:
+    with open(f'{class_data_dir}/_meta.txt', 'w') as f:
         f.write(f'prompt: {class_prompt}\n')
 
 
@@ -140,7 +140,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     determine_class_data_dir(train_params, data_base_dir, logger=logger)
 
     os.makedirs(train_dir, exist_ok=True)
-    with open(f'{train_dir}/_meta.txt', 'x') as f:
+    with open(f'{train_dir}/_meta.txt', 'w') as f:
         class_prompt = train_params.get('class_prompt')
         instance_prompt = train_params.get('instance_prompt')
         base_model_name = train_params.get('base_model_name')
@@ -207,7 +207,7 @@ def launch(config, task, launch_options, train_params, logger=None):
         if wrap_proxy:
             args = proxy_command.split() + args
         logger.info(' '.join(args))
-        log_file_h = open(log_file, 'x')
+        log_file_h = open(log_file, 'w')
         p = subprocess.Popen(args,
                              preexec_fn=preexec_function,
                              start_new_session=True,

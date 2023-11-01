@@ -272,3 +272,15 @@ Authorization: {{auth}}
   "base_model_name": "GuoFeng3.4"
 }
 
+
+### task - undo-release model
+
+POST {{base}}/task/aaa/undo-release
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "base_model_name": "GuoFeng3.4"
+}
+

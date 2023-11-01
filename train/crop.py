@@ -23,9 +23,9 @@ class UpperCrop(RandomCrop):
         wd = w - tw
         hd = h - th
         wp = int(wd / 4)
-        hp = int(hd / 3)
-        top = torch.randint(0, hd - hp + 1, size=(1,)).item()
-        left = torch.randint(wp, wd - wp + 1, size=(1,)).item()
+        hp = int(hd / 4)
+        top = torch.randint(0, (hp + hp) + 1, size=(1,)).item()
+        left = torch.randint(wp, (wd - wp) + 1, size=(1,)).item()
         # top = 0
         # left = (w - tw) / 2
         return top, left, th, tw

@@ -280,10 +280,35 @@ def release_model(task_id):
 
     target_file_name = f'{target_model_name}.safetensors'
     target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
+    existed = os.path.isfile(target_model_file)
+    shutil.copyfile(model_file, target_model_file)
+    if existed:
+        logger.warning(f'model file overwrote: {target_file_name}')
+
+    return jsonify({
+        'success': True
+    })
+
+
+@app.route('/task/<task_id>/undo-release', methods=('POST',))
+def undo_release_model(task_id):
+    req = request.get_json()
+    target_model_name = req.get('target_model_name')
+    if target_model_name is None:
+        base_model_name = req.get('base_model_name')
+        if base_model_name is not None:
+            target_model_name = f'{base_model_name}-t_{task_id}'
+        else:
+            target_model_name = f't_{task_id}'
+
+    data_base_dir = app.config['DATA_BASE_DIR']
+    checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
+
+    target_file_name = f'{target_model_name}.safetensors'
+    target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
     if os.path.isfile(target_model_file):
         logger.warning(f'target file exists: {target_file_name}')
-
-    shutil.copyfile(model_file, target_model_file)
+        os.remove(target_file_name)
 
     return jsonify({
         'success': True

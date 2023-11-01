@@ -145,6 +145,7 @@ def launch(config, task, launch_options, train_params, logger=None):
         instance_prompt = train_params.get('instance_prompt')
         base_model_name = train_params.get('base_model_name')
         class_data_dir = train_params.get('class_data_dir')
+        num_class_images = train_params.get('num_class_images')
         max_train_steps = train_params.get('max_train_steps')
         f.write(f'task_id: {task_id}\n'
                 f'user_id: {user_id}\n'
@@ -153,6 +154,7 @@ def launch(config, task, launch_options, train_params, logger=None):
                 f'class_prompt: {class_prompt}\n'
                 f'instance_prompt: {instance_prompt}\n'
                 f'class_data_dir: {class_data_dir}\n'
+                f'num_class_images: {num_class_images}\n'
                 f'max_train_steps: {max_train_steps}\n'
                 f'')
 

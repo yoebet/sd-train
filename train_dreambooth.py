@@ -412,8 +412,17 @@ def main(args):
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initialize automatically on the main process.
     if accelerator.is_main_process:
-        tracker_config = vars(copy.deepcopy(args))
-        tracker_config.pop("validation_images")
+        # tracker_config = vars(copy.deepcopy(args))
+        # tracker_config.pop("validation_images")
+        track_keys = ['base_model_name',
+                      'num_train_epochs', 'max_train_steps',
+                      'train_batch_size', 'gradient_accumulation_steps',
+                      'learning_rate',
+                      'lr_scheduler', 'lr_warmup_steps', 'lr_power', 'lr_num_cycles',
+                      'adam_beta1', 'adam_beta2', 'adam_weight_decay', 'max_grad_norm',
+                      'num_class_images', 'prior_loss_weight',
+                      'validation_scheduler', 'mixed_precision']
+        tracker_config = {k: v for k, v in (vars(args)).items() if k in track_keys}
         proj_name = f't_{args.task_id}' if args.task_id else 'dreambooth'
         accelerator.init_trackers(proj_name, config=tracker_config)
 
@@ -624,12 +633,16 @@ def main(args):
         pipeline.scheduler = pipeline.scheduler.from_config(pipeline.scheduler.config, **scheduler_args)
 
         pipeline.save_pretrained(args.model_output_dir)
+        logger.info(f'done save_pretrained.')
 
         image_args_list = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
+        logger.info(f'done log_test.')
 
         model_file = f'{args.model_output_dir}/model.safetensors'
         hf_to_original(args.model_output_dir, model_file, use_safetensors=True, half=True)
+        logger.info(f'done conversion.')
         fix_diffusers_model_conversion(model_file)
+        logger.info(f'done fix conversion.')
 
         if args.push_to_hub:
             put_to_hf(args, pipeline=pipeline, image_args_list=image_args_list)

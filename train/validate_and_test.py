@@ -176,7 +176,7 @@ def log_test(
         image_args_list.append((image, pipeline_args))
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
-        image_hash = hashlib.sha1(img_byte_arr.getvalue()).hexdigest()
+        image_hash = hashlib.sha1(img_byte_arr.getvalue()).hexdigest()[:16]
         file_name = f'{test_output_dir}/{i + 1}-{image_hash}.png'
         image.save(file_name)
 

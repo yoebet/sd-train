@@ -99,7 +99,7 @@ def log_validation(
         if tracker.name == "tensorboard":
             np_images = np.stack([np.asarray(img) for img in images])
             tracker.writer.add_images("validation", np_images, global_step, dataformats="NHWC")
-        if tracker.name == "wandb":
+        elif tracker.name == "wandb":
             tracker.log(
                 {
                     "validation": [

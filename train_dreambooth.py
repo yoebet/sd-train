@@ -83,8 +83,6 @@ def main(args):
         project_config=accelerator_project_config,
     )
 
-    logger.info(args)
-
     if args.report_to == "wandb":
         if not is_wandb_available():
             raise ImportError("Make sure to install wandb if you want to use it for logging during training.")
@@ -104,6 +102,8 @@ def main(args):
         datefmt="%m/%d/%Y %H:%M:%S",
         level=logging.INFO,
     )
+
+    logger.info(args)
 
     if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
         pass

@@ -204,11 +204,11 @@ def log_instance_images(accelerator, images):
     for tracker in accelerator.trackers:
         if tracker.name == "tensorboard":
             np_images = np.stack([np.asarray(img) for img in images])
-            tracker.writer.add_images("test", np_images, 0, dataformats="NHWC")
+            tracker.writer.add_images("dataset", np_images, 0, dataformats="NHWC")
         elif tracker.name == "wandb":
             tracker.log(
                 {
-                    "instance_images": [
+                    "dataset": [
                         wandb.Image(img, caption=f"{i + 1}")
                         for i, img in enumerate(images)
                     ]

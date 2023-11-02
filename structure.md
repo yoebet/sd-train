@@ -18,6 +18,8 @@ data
             t_{tid}
         cold
             t_{tid}
+    misc
+        tokenizer
     notes
     sd_models
         controlnet-models

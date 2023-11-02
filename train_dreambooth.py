@@ -427,6 +427,11 @@ def main(args):
         proj_name = f't_{args.task_id}' if args.task_id else 'dreambooth'
         accelerator.init_trackers(proj_name, config=tracker_config)
 
+    if accelerator.is_main_process:
+        instance_images = train_dataset.load_all_instance_images()
+        log_instance_images(accelerator, instance_images)
+        del instance_images
+
     # Train!
     total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
@@ -446,9 +451,6 @@ def main(args):
                                                               num_update_steps_per_epoch)
     else:
         global_step, first_epoch = 0, 0
-
-    instance_images = train_dataset.load_all_instance_images()
-    log_instance_images(accelerator, instance_images)
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),

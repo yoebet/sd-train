@@ -142,7 +142,7 @@ def check_task_status(task_id):
                 'failure_reason': 'wpn'
             })
         try:
-            logger.info(rp.cmdline())
+            rp.cmdline()
         except psutil.ZombieProcess:
             return jsonify({
                 'success': True,
@@ -284,7 +284,7 @@ def release_model(task_id):
     existed = os.path.isfile(target_model_file)
     shutil.copyfile(model_file, target_model_file)
     if existed:
-        logger.warning(f'model file overwrote: {target_file_name}')
+        logger.warning(f'model file overwritten: {target_file_name}')
 
     return jsonify({
         'success': True
@@ -308,11 +308,38 @@ def undo_release_model(task_id):
     target_file_name = f'{target_model_name}.safetensors'
     target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
     if os.path.isfile(target_model_file):
-        logger.warning(f'target file exists: {target_file_name}')
         os.remove(target_model_file)
+        logger.info(f'target file removed: {target_file_name}')
 
     return jsonify({
         'success': True
+    })
+
+
+tokenizer = None
+
+
+@app.route('/check_tokens', methods=('POST',))
+def check_tokens():
+    req = request.get_json()
+    text = req.get('text', None)
+    if text is None:
+        raise Exception('missing `text` parameter')
+
+    data_base_dir = app.config['DATA_BASE_DIR']
+    global tokenizer
+    if tokenizer is None:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            f'{data_base_dir}/misc/tokenizer',
+            local_files_only=True
+        )
+    t = tokenizer
+    tokens = [t.decode(c) for c in t.encode(text)][1:-1]
+    return jsonify({
+        'count': len(tokens),
+        # 'parts': tokens,
+        'split': '|'.join(tokens)
     })
 
 

@@ -161,6 +161,11 @@ def launch(config, task, launch_options, train_params, logger=None):
     train_params['output_dir'] = train_dir
     log_file = f'{train_dir}/log-{str(int(time.time()))}.txt'
 
+    if train_params.get('push_to_hub', False):
+        ht = train_params.get('hub_token', None)
+        if ht is None or ht == '':
+            train_params['hub_token'] = config.get('HF_HUB_TOKEN', None)
+
     # with open(f'{train_dir}/_meta.txt', 'w') as f:
     #     f.write(f'class_prompt: {class_prompt}\n')
 

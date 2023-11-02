@@ -284,3 +284,15 @@ Authorization: {{auth}}
   "base_model_name": "GuoFeng3.4"
 }
 
+
+### task - check_tokens
+
+POST {{base}}/check_tokens
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "text": "zhaojiangshan"
+}
+

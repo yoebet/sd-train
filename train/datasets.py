@@ -89,7 +89,7 @@ class DreamBoothDataset(Dataset):
         image_transforms = transforms.Compose(
             [
                 transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
-                transforms.CenterCrop(size),
+                # transforms.CenterCrop(size),
             ]
         )
         instance_images = []

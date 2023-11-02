@@ -73,15 +73,6 @@ def main(args):
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
-    # Make one log on every process with the configuration for debugging.
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO,
-    )
-
-    logger.info(args)
-
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
 
@@ -91,6 +82,15 @@ def main(args):
         log_with=args.report_to,
         project_config=accelerator_project_config,
     )
+
+    # Make one log on every process with the configuration for debugging.
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.INFO,
+    )
+
+    logger.info(args)
 
     if args.report_to == "wandb":
         if not is_wandb_available():

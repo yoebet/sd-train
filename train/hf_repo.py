@@ -77,6 +77,7 @@ def put_to_hf(args, pipeline, image_args_list):
     upload_folder(
         repo_id=repo_id,
         folder_path=args.model_output_dir,
+        token=args.hub_token,
         commit_message="End of training",
         ignore_patterns=["step_*", "epoch_*"],
     )

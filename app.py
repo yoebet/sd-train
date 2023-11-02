@@ -309,7 +309,7 @@ def undo_release_model(task_id):
     target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
     if os.path.isfile(target_model_file):
         logger.warning(f'target file exists: {target_file_name}')
-        os.remove(target_file_name)
+        os.remove(target_model_file)
 
     return jsonify({
         'success': True

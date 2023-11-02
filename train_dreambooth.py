@@ -39,7 +39,7 @@ from train.class_images import gen_class_images
 from train.datasets import DreamBoothDataset, collate_fn
 from train.hf_repo import put_to_hf
 from train.train_args import parse_args
-from train.validate_and_test import log_validation, log_test
+from train.validate_and_test import log_validation, log_test, log_instance_images
 from train.convert_to_original import hf_to_original
 from train.fix_conversion import fix_diffusers_model_conversion
 from train.checkpointing import try_resume_from_checkpoint, save_checkpoint
@@ -73,6 +73,15 @@ def main(args):
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
 
+    # Make one log on every process with the configuration for debugging.
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.INFO,
+    )
+
+    logger.info(args)
+
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
 
@@ -96,15 +105,6 @@ def main(args):
             "Please set gradient_accumulation_steps to 1. This feature will be supported in the future."
         )
 
-    # Make one log on every process with the configuration for debugging.
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO,
-    )
-
-    logger.info(args)
-
     if args.pretrained_model_name_or_path is not None and args.pretrained_model_name_or_path != '':
         pass
     elif args.base_model_single_file is not None:
@@ -115,7 +115,6 @@ def main(args):
             'dtype': torch.half,
             'original_config_file': args.base_model_config_file,
         }
-        tmp_model_file = None
         if args.base_model_single_file.endswith('.safetensors'):
             tmp_model_file = str(Path(args.output_dir, Path(args.base_model_single_file).name))
             fix_diffusers_model_conversion(args.base_model_single_file, tmp_model_file)
@@ -123,6 +122,7 @@ def main(args):
                 tmp_model_file,
                 **load_params,
             )
+            os.remove(tmp_model_file)
         else:
             pipe = StableDiffusionPipeline.from_single_file(
                 args.base_model_single_file,
@@ -132,8 +132,6 @@ def main(args):
         pretrained_model_path = f'{hf_pretrained_dir}/{args.base_model_name}'
         pipe.save_pretrained(pretrained_model_path)
         del pipe
-        if tmp_model_file is not None:
-            os.remove(tmp_model_file)
         logger.info(f'[base_model] save pretrained: {pretrained_model_path}')
 
         args.pretrained_model_name_or_path = pretrained_model_path
@@ -448,6 +446,9 @@ def main(args):
                                                               num_update_steps_per_epoch)
     else:
         global_step, first_epoch = 0, 0
+
+    instance_images = train_dataset.load_all_instance_images()
+    log_instance_images(accelerator, instance_images)
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),

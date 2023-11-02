@@ -184,12 +184,12 @@ def log_test(
         if tracker.name == "tensorboard":
             np_images = np.stack([np.asarray(image_args[0]) for image_args in image_args_list])
             tracker.writer.add_images("test", np_images, global_step, dataformats="NHWC")
-        if tracker.name == "wandb":
+        elif tracker.name == "wandb":
             tracker.log(
                 {
                     "test": [
                         wandb.Image(img,
-                                    caption=f"{i}: {gen_args.get('prompt')}")
+                                    caption=f"{i + 1}: {gen_args.get('prompt')}")
                         for i, (img, gen_args) in enumerate(image_args_list)
                     ]
                 }
@@ -198,3 +198,19 @@ def log_test(
     torch.cuda.empty_cache()
 
     return image_args_list
+
+
+def log_instance_images(accelerator, images):
+    for tracker in accelerator.trackers:
+        if tracker.name == "tensorboard":
+            np_images = np.stack([np.asarray(img) for img in images])
+            tracker.writer.add_images("test", np_images, 0, dataformats="NHWC")
+        elif tracker.name == "wandb":
+            tracker.log(
+                {
+                    "instance_images": [
+                        wandb.Image(img, caption=f"{i + 1}")
+                        for i, img in enumerate(images)
+                    ]
+                }
+            )

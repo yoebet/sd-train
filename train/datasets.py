@@ -78,11 +78,28 @@ class DreamBoothDataset(Dataset):
         self.image_transforms = transforms.Compose(
             [
                 transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
-                transforms.CenterCrop(size) if center_crop else UpperCrop(size) , # transforms.RandomCrop(size)
+                transforms.CenterCrop(size) if center_crop else UpperCrop(size),  # transforms.RandomCrop(size)
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5]),
             ]
         )
+
+    def load_all_instance_images(self):
+        size = self.size
+        image_transforms = transforms.Compose(
+            [
+                transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
+                transforms.CenterCrop(size),
+            ]
+        )
+        instance_images = []
+        for f in self.instance_images_path:
+            img = Image.open(f)
+            if not img.mode == "RGB":
+                img = img.convert("RGB")
+            img = image_transforms(img)
+            instance_images.append(img)
+        return instance_images
 
     def __len__(self):
         return self._length

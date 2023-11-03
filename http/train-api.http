@@ -287,12 +287,12 @@ Authorization: {{auth}}
 
 ### task - check_tokens
 
-POST {{base}}/check_tokens
+POST {{base}}/check-tokens
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
 
 {
-  "text": "zhaojiangshan"
+  "text": "checkTokens"
 }
 

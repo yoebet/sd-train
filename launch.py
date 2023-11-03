@@ -166,8 +166,7 @@ def launch(config, task, launch_options, train_params, logger=None):
         if ht is None or ht == '':
             train_params['hub_token'] = config.get('HF_HUB_TOKEN', None)
 
-    # with open(f'{train_dir}/_meta.txt', 'w') as f:
-    #     f.write(f'class_prompt: {class_prompt}\n')
+    train_params['hf_alt_dir'] = f'{data_base_dir}/hf-alt'
 
     train_args = build_args(train_params, shell=shell)
     script_file = f'{launch_script_dir}/train_dreambooth.py'

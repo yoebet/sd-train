@@ -4,6 +4,9 @@
 data
     hf-accelerate
         xxx.yaml
+    hf-alt
+        tokenizer
+        scheduler
     hf-pretrained
         darkSushiMixMix_225D
             feature_extractor
@@ -18,8 +21,6 @@ data
             t_{tid}
         cold
             t_{tid}
-    misc
-        tokenizer
     notes
     sd_models
         controlnet-models

@@ -319,7 +319,7 @@ def undo_release_model(task_id):
 tokenizer = None
 
 
-@app.route('/check_tokens', methods=('POST',))
+@app.route('/check-tokens', methods=('POST',))
 def check_tokens():
     req = request.get_json()
     text = req.get('text', None)
@@ -331,7 +331,7 @@ def check_tokens():
     if tokenizer is None:
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(
-            f'{data_base_dir}/misc/tokenizer',
+            f'{data_base_dir}/hf-alt/tokenizer',
             local_files_only=True
         )
     t = tokenizer

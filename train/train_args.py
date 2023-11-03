@@ -52,6 +52,12 @@ def parse_args(input_args=None):
         help="hf pretrained dir for base models",
     )
     parser.add_argument(
+        "--hf_alt_dir",
+        type=str,
+        default=None,
+        help="hf alternative models dir",
+    )
+    parser.add_argument(
         "--tokenizer_name",
         type=str,
         default=None,

@@ -338,7 +338,7 @@ def check_tokens():
     tokens = [t.decode(c) for c in t.encode(text)][1:-1]
     return jsonify({
         'count': len(tokens),
-        # 'parts': tokens,
+        'parts': tokens,
         'split': '|'.join(tokens)
     })
 

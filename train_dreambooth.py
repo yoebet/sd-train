@@ -182,14 +182,15 @@ def main(args):
     text_encoder_cls = import_text_encoder_class(args.pretrained_model_name_or_path, args.revision)
 
     # Load scheduler and models
-    # noise_scheduler = DDPMScheduler.from_pretrained(
-    #     args.pretrained_model_name_or_path,
-    #     subfolder="scheduler",
-    # )
-    noise_scheduler = DPMSolverMultistepScheduler.from_pretrained(
-        f'{args.hf_alt_dir}',
+    noise_scheduler = DDPMScheduler.from_pretrained(
+        args.pretrained_model_name_or_path,
         subfolder="scheduler",
     )
+    # noise_scheduler = DPMSolverMultistepScheduler.from_pretrained(
+    #     f'{args.hf_alt_dir}',
+    #     subfolder="scheduler",
+    # )
+    # noise_scheduler.set_timesteps(30)
     text_encoder = text_encoder_cls.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="text_encoder",

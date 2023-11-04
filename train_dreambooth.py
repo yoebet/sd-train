@@ -606,7 +606,14 @@ def main(args):
                             logger,
                         )
 
-            logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+            if args.device_index is not None:
+                free, total = torch.cuda.mem_get_info(args.device_index)
+                occupied = total - free
+                k = 1024
+                occupied_gb = occupied / 6 * k * k * k
+            else:
+                occupied_gb = 0.0
+            logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0], 'gpu': occupied_gb}
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 

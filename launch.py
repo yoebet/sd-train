@@ -168,11 +168,19 @@ def launch(config, task, launch_options, train_params, logger=None):
 
     train_params['hf_alt_dir'] = f'{data_base_dir}/hf-alt'
 
+    device_index = launch_options.get('device_index', None)
+    train_params['device_index'] = device_index
+
     train_args = build_args(train_params, shell=shell)
     script_file = f'{launch_script_dir}/train_dreambooth.py'
 
     if hf_accelerate:
         accelerate_params = launch_options.get('accelerate', None)
+        if device_index is not None:
+            if accelerate_params is None:
+                accelerate_params = {}
+                launch_options['accelerate'] = accelerate_params
+            accelerate_params['gpu_ids'] = str(device_index)
         if accelerate_params is None:
             accelerate_args = []
         else:

@@ -91,6 +91,14 @@ def launch_task():
     if task['task_id'] is None:
         task['task_id'] = prepare_res.get('task_id')
 
+    device_index = launch_options.get('device_index', None)
+    if device_index is not None:
+        free, total = torch.cuda.mem_get_info(device_index)
+        occupied = total - free
+        k = 1024
+        if occupied > 6 * k * k * k:
+            raise Exception('device occupied')
+
     train_params = {}
 
     # grouped -> flatten

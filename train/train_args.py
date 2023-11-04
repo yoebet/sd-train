@@ -2,6 +2,7 @@ import os
 import argparse
 import warnings
 
+
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser.add_argument("--task_id", type=str, help="sd_train.id")
@@ -396,6 +397,8 @@ def parse_args(input_args=None):
         choices=["DPMSolverMultistepScheduler", "DDPMScheduler"],
         help="Select which scheduler to use for validation. DDPMScheduler is recommended for DeepFloyd IF.",
     )
+    # parser.add_argument("--launch_method", type=str, default=None, help="accelerate/python")
+    parser.add_argument("--device_index", type=int, default=None, help="device index")
 
     if input_args is not None:
         args = parser.parse_args(input_args)

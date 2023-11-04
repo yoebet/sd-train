@@ -97,7 +97,10 @@ def launch_task():
         occupied = total - free
         k = 1024
         if occupied > 6 * k * k * k:
-            raise Exception('device occupied')
+            return (jsonify({
+                'success': False,
+                'error_message': 'device occupied',
+            }))
 
     train_params = {}
 
@@ -242,25 +245,6 @@ def get_test_image_file(task_id, sub_dir, filename):
     train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
     image_path = f'{train_dir}/test/{filename}'
     return send_file(image_path)
-
-
-@app.route('/task/<task_id>/test_images/<filename>/b64', methods=('GET',))
-def get_test_image(task_id, sub_dir, filename):
-    data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
-    image_path = f'{train_dir}/test/{filename}'
-    if not os.path.isfile(image_path):
-        return jsonify({
-            'success': False,
-            'error_message': 'no such file'
-        })
-
-    with open(image_path, "rb") as img_file:
-        encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
-    return jsonify({
-        'success': True,
-        'base64': encoded_image
-    })
 
 
 @app.route('/task/<task_id>/release', methods=('POST',))

@@ -169,7 +169,12 @@ def launch(config, task, launch_options, train_params, logger=None):
     train_params['hf_alt_dir'] = f'{data_base_dir}/hf-alt'
 
     device_index = launch_options.get('device_index', None)
-    train_params['device_index'] = device_index
+
+    if device_index is not None:
+        if hf_accelerate:
+            train_params['device_index'] = 0
+        else:
+            train_params['device_index'] = device_index
 
     train_args = build_args(train_params, shell=shell)
     script_file = f'{launch_script_dir}/train_dreambooth.py'

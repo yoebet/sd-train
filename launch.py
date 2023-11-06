@@ -203,13 +203,13 @@ def launch(config, task, launch_options, train_params, logger=None):
     else:
         args = ['python', script_file] + train_args
 
-    # p = subprocess.Popen(args, preexec_fn=os.setpgrp)
-    def preexec_function():
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-
     # https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables
     env = os.environ.copy()
     env['HF_HUB_OFFLINE'] = 'true' if hf_hub_offline else ''
+
+    # p = subprocess.Popen(args, preexec_fn=os.setpgrp)
+    def preexec_function():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     if shell:
         cmd = ' '.join(args)

@@ -10,6 +10,7 @@ from launch import launch
 from prepare import prepare_instance_images
 from conversion import convert_base_original_to_hf, convert_trained_to_original
 from train.dirs import get_train_dir
+from model_sync import sync_file
 
 app = Flask(__name__)
 
@@ -293,6 +294,11 @@ def release_model(task_id):
     if existed:
         logger.warning(f'model file overwritten: {target_file_name}')
 
+    try:
+        sync_file(data_base_dir, target_file_name, logger=logger)
+    except Exception as e:
+        logger.error(e)
+
     return jsonify({
         'success': True
     })
@@ -320,6 +326,29 @@ def undo_release_model(task_id):
 
     return jsonify({
         'success': True
+    })
+
+
+@app.route('/sync-checkpoint', methods=('POST',))
+def sync_model():
+    req = request.get_json()
+    data_base_dir = app.config['DATA_BASE_DIR']
+    target_file_name = req.get('model_file')
+    if '.' not in target_file_name:
+        target_file_name = f'{target_file_name}.safetensors'
+
+    try:
+        pid = sync_file(data_base_dir, target_file_name, logger=logger)
+    except Exception as e:
+        logger.error(e)
+        return jsonify({
+            'success': False,
+            'error_message': str(e)
+        })
+
+    return jsonify({
+        'success': True,
+        'pid': pid
     })
 
 

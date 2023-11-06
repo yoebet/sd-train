@@ -296,3 +296,17 @@ Authorization: {{auth}}
   "text": "checkTokens"
 }
 
+
+### sync-checkpoint
+
+POST {{base}}/sync-checkpoint
+Content-Type: application/json
+Accept: application/json
+Authorization: {{auth}}
+
+{
+  "model_file": "shitong-man"
+}
+
+
+

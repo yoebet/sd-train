@@ -22,6 +22,7 @@ data
         cold
             t_{tid}
     notes
+    prompts
     sd_models
         controlnet-models
         controlnet-annotator-models

@@ -121,11 +121,12 @@ def launch(config, task, launch_options, train_params, logger=None):
 
     locate_base_model(train_params, data_base_dir, logger=logger)
 
+    prompts_dir = f'{data_base_dir}/prompts'
     train_type = task.get('train_type', None)
     if train_type == 'live':
-        test_prompts_file = 'train/test_prompts_live.json'
+        test_prompts_file = f'{prompts_dir}/test_prompts_live.json'
     else:
-        test_prompts_file = 'train/test_prompts_object.json'
+        test_prompts_file = f'{prompts_dir}/test_prompts_object.json'
     train_params['test_prompts_file'] = test_prompts_file
 
     if train_params.get('center_crop', None) is None:

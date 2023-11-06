@@ -83,11 +83,19 @@ def launch_task():
 
     config = app.config
 
-    skip_download_ie = launch_options.get('skip_download_dataset_if_exists')
-    prepare_res = prepare_instance_images(config,
-                                          task,
-                                          skip_if_exists=skip_download_ie,
-                                          logger=logger)
+    try:
+        skip_download_ie = launch_options.get('skip_download_dataset_if_exists')
+        prepare_res = prepare_instance_images(config,
+                                              task,
+                                              skip_if_exists=skip_download_ie,
+                                              logger=logger)
+    except Exception as e:
+        logger.error(e)
+        return jsonify({
+            'success': False,
+            'error_message': f"[prepare] {type(e)}: {e}"
+        })
+
     if task['task_id'] is None:
         task['task_id'] = prepare_res.get('task_id')
 
@@ -112,12 +120,19 @@ def launch_task():
         else:
             train_params[k] = p
 
-    # logger.info(train_params)
-    result = launch(config,
-                    task,
-                    launch_options,
-                    train_params,
-                    logger=logger)
+    try:
+        # logger.info(train_params)
+        result = launch(config,
+                        task,
+                        launch_options,
+                        train_params,
+                        logger=logger)
+    except Exception as e:
+        logger.error(e)
+        return jsonify({
+            'success': False,
+            'error_message': f"[launch] {type(e)}: {e}"
+        })
 
     return jsonify(result)
 

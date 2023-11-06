@@ -607,14 +607,20 @@ def main(args):
                         )
 
             if args.device_index is not None:
-                free, total = torch.cuda.mem_get_info(args.device_index)
-                occupied = total - free
                 k = 1024
                 g = k * k * k
-                occupied_gb = occupied / g
+                # free, total = torch.cuda.mem_get_info(args.device_index)
+                # occupied = total - free
+                # occupied_gb = occupied / g
+                reserved = torch.cuda.memory_reserved(args.device_index)
+                reserved_gb = reserved / g
             else:
-                occupied_gb = 0.0
-            logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0], "gpu (GB)": occupied_gb}
+                # occupied_gb = 0.0
+                reserved_gb = 0.0
+            logs = {"loss": loss.detach().item(),
+                    "lr": lr_scheduler.get_last_lr()[0],
+                    # "gpu occupied": occupied_gb,
+                    "gpu reserved": reserved_gb}
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 

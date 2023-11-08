@@ -31,7 +31,6 @@ dbus-python==1.2.18
 debugpy==1.8.0
 decorator==5.1.1
 defusedxml==0.7.1
--e git+https://github.com/huggingface/diffusers@f912f39b50f87e50a9d99346f5c1b6e644653262#egg=diffusers
 dill==0.3.7
 distro==1.7.0
 docker-pycreds==0.4.0

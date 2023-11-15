@@ -23,6 +23,7 @@ ftfy
 # pyarrow
 wandb
 tensorboard
+# torch_tb_profiler
 matplotlib
 open-clip-torch
 fastcore

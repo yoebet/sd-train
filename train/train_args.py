@@ -137,6 +137,7 @@ def parse_args(input_args=None):
         action="store_true",
         help="Whether to train the text encoder. If set, the text encoder should be float32 precision.",
     )
+    parser.add_argument("--train_text_encoder_ratio", type=float, help="training time for text encoder, 0-1")
     parser.add_argument(
         "--train_batch_size", type=int, default=4, help="Batch size (per device) for the training dataloader."
     )

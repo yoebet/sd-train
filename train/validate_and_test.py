@@ -28,9 +28,10 @@ def log_validation(
         logger,
 ):
     logger.info(
-        f"Running validation... \n Generating {args.num_validation_images} images with prompt:"
-        f" {args.validation_prompt}."
+        f"Running validation... \n Generating {args.num_validation_images} images."
     )
+    test_prompts = args.test_prompts
+    n_prompts = len(test_prompts)
 
     output_dir = f'{args.validations_dir}/s_{global_step}'
     os.makedirs(output_dir, exist_ok=True)
@@ -83,9 +84,17 @@ def log_validation(
     generator = None if args.seed is None else torch.Generator(device=accelerator.device).manual_seed(args.seed)
     images = []
     if args.validation_images is None:
-        for _ in range(args.num_validation_images):
+        for i in range(args.num_validation_images):
+            if not args.pre_compute_text_embeddings:
+                test_args = test_prompts[i % n_prompts]
+                prompt = test_args.get('prompt')
+                prompt = f'{args.instance_prompt}, {prompt}'
+                negative_prompt = test_args.get('negative_prompt')
+                pipeline_args = {"prompt": prompt,
+                                 "negative_prompt": negative_prompt,
+                                 }
             with torch.autocast("cuda"):
-                image = pipeline(**pipeline_args, num_inference_steps=25, generator=generator).images[0]
+                image = pipeline(**pipeline_args, num_inference_steps=50, generator=generator).images[0]
             images.append(image)
     else:
         for image in args.validation_images:
@@ -130,14 +139,7 @@ def log_test(
         shutil.rmtree(test_output_dir)
     os.makedirs(test_output_dir, exist_ok=True)
 
-    if args.test_prompts_file is not None and os.path.isfile(args.test_prompts_file):
-        test_prompts = json.load(open(args.test_prompts_file))
-    else:
-        logger.info(f'args.test_prompts_file not configured')
-        test_prompts = [
-            {'prompt': args.instance_prompt,
-             'negative_prompt': ''}
-        ]
+    test_prompts = args.test_prompts
     n_prompts = len(test_prompts)
     logger.info(f'test prompts: {n_prompts}')
 

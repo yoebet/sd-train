@@ -29,6 +29,7 @@ def gen_class_images(args, accelerator, logger):
             safety_checker=None,
             revision=args.revision,
         )
+        # pipeline.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)
         pipeline.set_progress_bar_config(disable=True)
 
         num_new_images = args.num_class_images - cur_class_images

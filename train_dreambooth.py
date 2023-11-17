@@ -9,6 +9,7 @@ import math
 import os
 import shutil
 from pathlib import Path
+import json
 
 import torch
 import torch.nn.functional as F
@@ -27,6 +28,7 @@ import diffusers
 from diffusers import (
     AutoencoderKL,
     DDPMScheduler,
+    DDIMScheduler,
     DPMSolverMultistepScheduler,
     DiffusionPipeline,
     UNet2DConditionModel,
@@ -73,6 +75,16 @@ def main(args):
 
     if args.validation_prompt is None or args.validation_prompt == '':
         args.validation_prompt = args.instance_prompt
+
+    if args.test_prompts_file is not None and os.path.isfile(args.test_prompts_file):
+        test_prompts = json.load(open(args.test_prompts_file))
+    else:
+        logger.info(f'args.test_prompts_file not configured')
+        test_prompts = [
+            {'prompt': args.instance_prompt,
+             'negative_prompt': ''}
+        ]
+    args['test_prompts'] = test_prompts
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
@@ -182,12 +194,17 @@ def main(args):
     text_encoder_cls = import_text_encoder_class(args.pretrained_model_name_or_path, args.revision)
 
     # Load scheduler and models
-    noise_scheduler = DDPMScheduler.from_pretrained(
+    # noise_scheduler = DDPMScheduler.from_pretrained(
+    #     args.pretrained_model_name_or_path,
+    #     subfolder="scheduler",
+    # )
+    noise_scheduler = DDIMScheduler.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="scheduler",
     )
     # noise_scheduler = DPMSolverMultistepScheduler.from_pretrained(
-    #     f'{args.hf_alt_dir}',
+    #     # f'{args.hf_alt_dir}',
+    #     args.pretrained_model_name_or_path,
     #     subfolder="scheduler",
     # )
     # noise_scheduler.set_timesteps(30)
@@ -213,6 +230,8 @@ def main(args):
         subfolder="unet",
         revision=args.revision,
     )
+
+    # unet.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)
 
     # create custom saving & loading hooks so that `accelerator.save_state(...)` serializes in a nice format
     def save_model_hook(models, weights, model_output_dir):
@@ -252,7 +271,6 @@ def main(args):
 
     if vae is not None:
         vae.requires_grad_(False)
-        logger.info('not train vae')
 
     if not args.train_text_encoder:
         text_encoder.requires_grad_(False)
@@ -466,11 +484,18 @@ def main(args):
         disable=not accelerator.is_local_main_process,
     )
 
+    stop_te = False
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train()
-        if args.train_text_encoder:
+        if args.train_text_encoder and not stop_te:
             text_encoder.train()
         for step, batch in enumerate(train_dataloader):
+            if args.train_text_encoder_ratio is not None and not stop_te:
+                stop_te = global_step >= args.max_train_steps * args.train_text_encoder_ratio
+                if stop_te and text_encoder.training:
+                    text_encoder.eval()
+                    logger.info(f'stop training TE, {global_step=}')
+
             with accelerator.accumulate(unet):
                 pixel_values = batch["pixel_values"].to(dtype=weight_dtype)
 
@@ -620,7 +645,7 @@ def main(args):
             logs = {"loss": loss.detach().item(),
                     "lr": lr_scheduler.get_last_lr()[0],
                     # "gpu occupied": occupied_gb,
-                    "gpu reserved": reserved_gb}
+                    "gpu-res": reserved_gb}
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 
@@ -641,9 +666,11 @@ def main(args):
         pipeline = DiffusionPipeline.from_pretrained(
             args.pretrained_model_name_or_path,
             unet=accelerator.unwrap_model(unet),
+            noise_scheduler=noise_scheduler,
             revision=args.revision,
             **pipeline_args,
         )
+        # pipeline.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)
 
         # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
         scheduler_args = {}
@@ -659,6 +686,9 @@ def main(args):
         pipeline.scheduler = pipeline.scheduler.from_config(pipeline.scheduler.config, **scheduler_args)
 
         pipeline.save_pretrained(args.model_output_dir)
+
+        with open(f'{args.model_output_dir}/token_identifier.txt', 'w') as f:
+            f.write(args.instance_prompt)
         logger.info(f'done save_pretrained.')
 
         image_args_list = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)

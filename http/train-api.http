@@ -103,8 +103,9 @@ Authorization: {{auth}}
 
 {
   "task": {
-    "task_id": "222",
+    "task_id": "234",
     "user_id": "9NYzoSGc6l3GMYS6",
+    "sub_dir": "test",
     "train_type": "live",
     "instance_images": [
       "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
@@ -123,10 +124,9 @@ Authorization: {{auth}}
   },
   "launch": {
     "accelerate": {
-      "gpu_ids": "8"
     },
     "wrap_proxy": true,
-    "proxy_command": "proxychains4 -q",
+    "device_index": 7,
     "hf_hub_offline": true,
     "hf_accelerate": true,
     "dataset_version": 1,
@@ -167,14 +167,16 @@ Authorization: {{auth}}
 
 ### launch - mac
 
-POST {{base}}/task/launch
+POST {{base}}/launch
 Content-Type: application/json
 Accept: application/json
 Authorization: {{auth}}
 
 {
   "task": {
-    "task_id": "aaa",
+    "task_id": "bbb",
+    "sub_dir": "test",
+    "train_type": "live",
     "instance_images": [
       "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/jaiuw6ke5zsojx7qj3shfe6reo27acso.jpg",
       "https://oss-dev.tishi.top/1aW4yJHNT2mgfjQv/d0jlgphepb0uvb2317vjlp4i61gtigz4.jpg",
@@ -185,21 +187,23 @@ Authorization: {{auth}}
     "shell": false,
     "wrap_proxy": false,
     "hf_hub_offline": true,
-    "hf_accelerate": true,
+    "hf_accelerate": false,
     "skip_download_dataset_if_exists": true,
     "accelerate": {
     }
   },
   "train": {
     "pretrained_model_name_or_path": "runwayml/stable-diffusion-v1-5",
-    "instance_prompt": "a photo of sks dog",
-    "max_train_steps": 40,
+    "base_model_name": "stable-diffusion-v1-5",
+    "class_prompt": "a photo of a man",
+    "instance_prompt": "a photo of a <sks> man",
+    "max_train_steps": 4,
+    "train_text_encoder_ratio": 0.5,
     "learning_rate": "2e-6",
     "with_prior_preservation": true,
-    "class_prompt": "a photo of dog",
-    "num_class_images": 20,
-    "train_batch_size": 2,
-    "gradient_accumulation_steps": 4
+    "num_class_images": 2,
+    "train_batch_size": 1,
+    "gradient_accumulation_steps": 1
   }
 }
 
@@ -293,7 +297,7 @@ Accept: application/json
 Authorization: {{auth}}
 
 {
-  "text": "checkTokens"
+  "text": "1portrait of usada pekora, mignon"
 }
 
 

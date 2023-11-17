@@ -84,7 +84,6 @@ def main(args):
             {'prompt': args.instance_prompt,
              'negative_prompt': ''}
         ]
-    args['test_prompts'] = test_prompts
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
@@ -104,6 +103,7 @@ def main(args):
     )
 
     logger.info(args)
+    args.test_prompts = test_prompts
 
     if args.report_to == "wandb":
         if not is_wandb_available():

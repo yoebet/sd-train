@@ -668,6 +668,7 @@ def main(args):
             unet=accelerator.unwrap_model(unet),
             noise_scheduler=noise_scheduler,
             revision=args.revision,
+            custom_pipeline="lpw_stable_diffusion",
             **pipeline_args,
         )
         # pipeline.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)

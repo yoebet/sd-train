@@ -84,6 +84,7 @@ def main(args):
             {'prompt': args.instance_prompt,
              'negative_prompt': ''}
         ]
+    args.custom_pipeline = "lpw_stable_diffusion"
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)
@@ -194,14 +195,14 @@ def main(args):
     text_encoder_cls = import_text_encoder_class(args.pretrained_model_name_or_path, args.revision)
 
     # Load scheduler and models
-    # noise_scheduler = DDPMScheduler.from_pretrained(
-    #     args.pretrained_model_name_or_path,
-    #     subfolder="scheduler",
-    # )
-    noise_scheduler = DDIMScheduler.from_pretrained(
+    noise_scheduler = DDPMScheduler.from_pretrained(
         args.pretrained_model_name_or_path,
         subfolder="scheduler",
     )
+    # noise_scheduler = DDIMScheduler.from_pretrained(
+    #     args.pretrained_model_name_or_path,
+    #     subfolder="scheduler",
+    # )
     # noise_scheduler = DPMSolverMultistepScheduler.from_pretrained(
     #     # f'{args.hf_alt_dir}',
     #     args.pretrained_model_name_or_path,
@@ -668,7 +669,7 @@ def main(args):
             unet=accelerator.unwrap_model(unet),
             noise_scheduler=noise_scheduler,
             revision=args.revision,
-            custom_pipeline="lpw_stable_diffusion",
+            custom_pipeline=args.custom_pipeline,
             **pipeline_args,
         )
         # pipeline.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)

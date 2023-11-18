@@ -52,7 +52,7 @@ def log_validation(
         unet=accelerator.unwrap_model(unet),
         revision=args.revision,
         torch_dtype=weight_dtype,
-        custom_pipeline="lpw_stable_diffusion",
+        custom_pipeline=args.custom_pipeline,
         **pipeline_args,
     )
 

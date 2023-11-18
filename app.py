@@ -171,11 +171,7 @@ def check_task_status(task_id):
         try:
             rp.cmdline()
         except psutil.ZombieProcess:
-            return jsonify({
-                'success': True,
-                'task_status': 'failed',
-                'failure_reason': 'zomb'
-            })
+            pass
         except psutil.AccessDenied:
             logger.error('AccessDenied')
             return jsonify({

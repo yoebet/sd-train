@@ -95,6 +95,7 @@ class DreamBoothDataset(Dataset):
         instance_images = []
         for f in self.instance_images_path:
             img = Image.open(f)
+            img = exif_transpose(img)
             if not img.mode == "RGB":
                 img = img.convert("RGB")
             img = image_transforms(img)

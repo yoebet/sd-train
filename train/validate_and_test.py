@@ -26,6 +26,7 @@ def log_validation(
         prompt_embeds,
         negative_prompt_embeds,
         logger,
+        dirname_prefix='s',
 ):
     logger.info(
         f"Running validation... \n Generating {args.num_validation_images} images."
@@ -33,7 +34,7 @@ def log_validation(
     test_prompts = args.test_prompts
     n_prompts = len(test_prompts)
 
-    output_dir = f'{args.validations_dir}/s_{global_step}'
+    output_dir = f'{args.validations_dir}/{dirname_prefix}_{global_step}'
     os.makedirs(output_dir, exist_ok=True)
 
     pipeline_args = {}

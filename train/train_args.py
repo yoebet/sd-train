@@ -139,6 +139,11 @@ def parse_args(input_args=None):
     )
     parser.add_argument("--train_text_encoder_ratio", type=float, help="training time for text encoder, 0-1")
     parser.add_argument(
+        "--train_te_separately",
+        action="store_true",
+        help="Whether to train the text encoder separately.",
+    )
+    parser.add_argument(
         "--train_batch_size", type=int, default=4, help="Batch size (per device) for the training dataloader."
     )
     parser.add_argument(
@@ -196,8 +201,14 @@ def parse_args(input_args=None):
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=5e-6,
+        default=2e-6,
         help="Initial learning rate (after the potential warmup period) to use.",
+    )
+    parser.add_argument(
+        "--learning_rate_te",
+        type=float,
+        default=2e-7,
+        help="Initial learning rate (after the potential warmup period) to use (for text encoder only).",
     )
     parser.add_argument(
         "--scale_lr",

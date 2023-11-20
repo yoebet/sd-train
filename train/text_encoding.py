@@ -74,7 +74,7 @@ def pre_compute_text_embeddings(args, text_encoder, tokenizer):
         return prompt_embeds
 
     pre_computed_encoder_hidden_states = do_compute(args.instance_prompt)
-    validation_prompt_negative_prompt_embeds = do_compute("")
+    validation_negative_prompt_embeds = do_compute("")
 
     if args.validation_prompt is not None:
         validation_prompt_encoder_hidden_states = do_compute(args.validation_prompt)
@@ -82,11 +82,11 @@ def pre_compute_text_embeddings(args, text_encoder, tokenizer):
         validation_prompt_encoder_hidden_states = None
 
     if args.class_prompt is not None:
-        pre_computed_class_prompt_encoder_hidden_states = do_compute(args.class_prompt)
+        class_prompt_encoder_hidden_states = do_compute(args.class_prompt)
     else:
-        pre_computed_class_prompt_encoder_hidden_states = None
+        class_prompt_encoder_hidden_states = None
 
     return (pre_computed_encoder_hidden_states,
             validation_prompt_encoder_hidden_states,
-            validation_prompt_negative_prompt_embeds,
-            pre_computed_class_prompt_encoder_hidden_states)
+            validation_negative_prompt_embeds,
+            class_prompt_encoder_hidden_states)

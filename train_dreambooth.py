@@ -47,6 +47,7 @@ from train.convert_to_original import hf_to_original
 from train.fix_conversion import fix_diffusers_model_conversion
 from train.checkpointing import try_resume_from_checkpoint, save_checkpoint
 from train.text_encoding import import_text_encoder_class, encode_prompt, pre_compute_text_embeddings
+from train.train_epochs import train_epochs
 
 # print(os.environ)
 
@@ -334,9 +335,12 @@ def main(args):
     else:
         optimizer_class = torch.optim.AdamW
 
+    train_te_separately = args.train_text_encoder and args.train_te_separately and args.learning_rate_te is not None
+
     # Optimizer creation
     params_to_optimize = (
-        itertools.chain(unet.parameters(), text_encoder.parameters()) if args.train_text_encoder else unet.parameters()
+        itertools.chain(unet.parameters(),
+                        text_encoder.parameters()) if train_te_separately else unet.parameters()
     )
     optimizer = optimizer_class(
         params_to_optimize,
@@ -346,11 +350,22 @@ def main(args):
         eps=args.adam_epsilon,
     )
 
+    if train_te_separately:
+        optimizer_te = optimizer_class(
+            text_encoder.parameters(),
+            lr=args.learning_rate_te,
+            betas=(args.adam_beta1, args.adam_beta2),
+            weight_decay=args.adam_weight_decay,
+            eps=args.adam_epsilon,
+        )
+    else:
+        optimizer_te = None
+
     if args.pre_compute_text_embeddings:
         (pre_computed_encoder_hidden_states,
-         validation_prompt_encoder_hidden_states,
-         validation_prompt_negative_prompt_embeds,
-         pre_computed_class_prompt_encoder_hidden_states) = pre_compute_text_embeddings(args,
+         validation_prompt_embeds,
+         validation_negative_prompt_embeds,
+         class_prompt_encoder_hidden_states) = pre_compute_text_embeddings(args,
                                                                                         text_encoder,
                                                                                         tokenizer)
         text_encoder = None
@@ -360,9 +375,9 @@ def main(args):
         torch.cuda.empty_cache()
     else:
         pre_computed_encoder_hidden_states = None
-        validation_prompt_encoder_hidden_states = None
-        validation_prompt_negative_prompt_embeds = None
-        pre_computed_class_prompt_encoder_hidden_states = None
+        validation_prompt_embeds = None
+        validation_negative_prompt_embeds = None
+        class_prompt_encoder_hidden_states = None
 
     # Dataset and DataLoaders creation:
     train_dataset = DreamBoothDataset(
@@ -375,7 +390,7 @@ def main(args):
         size=args.resolution,
         center_crop=args.center_crop,
         encoder_hidden_states=pre_computed_encoder_hidden_states,
-        class_prompt_encoder_hidden_states=pre_computed_class_prompt_encoder_hidden_states,
+        class_prompt_encoder_hidden_states=class_prompt_encoder_hidden_states,
         tokenizer_max_length=args.tokenizer_max_length,
     )
 
@@ -403,11 +418,28 @@ def main(args):
         power=args.lr_power,
     )
 
+    if train_te_separately:
+        lr_scheduler_te = get_scheduler(
+            args.lr_scheduler,
+            optimizer=optimizer_te,
+            num_warmup_steps=args.lr_warmup_steps * accelerator.num_processes,
+            num_training_steps=args.max_train_steps * accelerator.num_processes,
+            num_cycles=args.lr_num_cycles,
+            power=args.lr_power,
+        )
+    else:
+        lr_scheduler_te = None
+
     # Prepare everything with our `accelerator`.
     if args.train_text_encoder:
-        unet, text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-            unet, text_encoder, optimizer, train_dataloader, lr_scheduler
-        )
+        if train_te_separately:
+            unet, text_encoder, optimizer, optimizer_te, train_dataloader, lr_scheduler, lr_scheduler_te = accelerator.prepare(
+                unet, text_encoder, optimizer, optimizer_te, train_dataloader, lr_scheduler, lr_scheduler_te
+            )
+        else:
+            unet, text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+                unet, text_encoder, optimizer, train_dataloader, lr_scheduler
+            )
     else:
         unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
             unet, optimizer, train_dataloader, lr_scheduler
@@ -442,8 +474,8 @@ def main(args):
         # tracker_config.pop("validation_images")
         track_keys = ['base_model_name',
                       'num_train_epochs', 'max_train_steps',
-                      'train_batch_size', 'gradient_accumulation_steps',
-                      'learning_rate',
+                      'train_batch_size', 'gradient_accumulation_steps', 'offset_noise',
+                      'learning_rate', 'learning_rate_te', 'train_text_encoder_ratio',
                       'lr_scheduler', 'lr_warmup_steps', 'lr_power', 'lr_num_cycles',
                       'adam_beta1', 'adam_beta2', 'adam_weight_decay', 'max_grad_norm',
                       'num_class_images', 'prior_loss_weight',
@@ -477,181 +509,25 @@ def main(args):
     else:
         global_step, first_epoch = 0, 0
 
-    progress_bar = tqdm(
-        range(0, args.max_train_steps),
-        initial=global_step,
-        desc="Steps",
-        # Only show the progress bar once on each machine.
-        disable=not accelerator.is_local_main_process,
-    )
+    train_epochs_kwargs = {'accelerator': accelerator, 'args': args,
+                           'first_epoch': first_epoch, 'global_step': global_step,
+                           'train_dataloader': train_dataloader, 'unet': unet, 'vae': vae,
+                           'tokenizer': tokenizer, 'text_encoder': text_encoder,
+                           'noise_scheduler': noise_scheduler, 'weight_dtype': weight_dtype,
+                           'validation_prompt_embeds': validation_prompt_embeds,
+                           'validation_negative_prompt_embeds': validation_negative_prompt_embeds,
+                           'logger': logger
+                           }
+    if train_te_separately:
+        train_epochs(train_unet=False, train_te=True,
+                     optimizer=optimizer_te, lr_scheduler=lr_scheduler_te,
+                     **train_epochs_kwargs)
+        logger.info(f'done training text encoder')
 
-    stop_te = False
-    for epoch in range(first_epoch, args.num_train_epochs):
-        unet.train()
-        if args.train_text_encoder and not stop_te:
-            text_encoder.train()
-        for step, batch in enumerate(train_dataloader):
-            if args.train_text_encoder_ratio is not None and not stop_te:
-                stop_te = global_step >= args.max_train_steps * args.train_text_encoder_ratio
-                if stop_te and text_encoder.training:
-                    text_encoder.eval()
-                    logger.info(f'stop training TE, {global_step=}')
-
-            with accelerator.accumulate(unet):
-                pixel_values = batch["pixel_values"].to(dtype=weight_dtype)
-
-                if vae is not None:
-                    # Convert images to latent space
-                    model_input = vae.encode(pixel_values).latent_dist.sample()
-                    model_input = model_input * vae.config.scaling_factor
-                else:
-                    model_input = pixel_values
-
-                # Sample noise that we'll add to the model input
-                if args.offset_noise:
-                    noise = torch.randn_like(model_input) + 0.1 * torch.randn(
-                        model_input.shape[0], model_input.shape[1], 1, 1, device=model_input.device
-                    )
-                else:
-                    noise = torch.randn_like(model_input)
-                bsz, channels, height, width = model_input.shape
-                # Sample a random timestep for each image
-                timesteps = torch.randint(
-                    0, noise_scheduler.config.num_train_timesteps, (bsz,), device=model_input.device
-                )
-                timesteps = timesteps.long()
-
-                # Add noise to the model input according to the noise magnitude at each timestep
-                # (this is the forward diffusion process)
-                noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps)
-
-                # Get the text embedding for conditioning
-                if args.pre_compute_text_embeddings:
-                    encoder_hidden_states = batch["input_ids"]
-                else:
-                    encoder_hidden_states = encode_prompt(
-                        text_encoder,
-                        batch["input_ids"],
-                        batch["attention_mask"],
-                        text_encoder_use_attention_mask=args.text_encoder_use_attention_mask,
-                    )
-
-                if accelerator.unwrap_model(unet).config.in_channels == channels * 2:
-                    noisy_model_input = torch.cat([noisy_model_input, noisy_model_input], dim=1)
-
-                if args.class_labels_conditioning == "timesteps":
-                    class_labels = timesteps
-                else:
-                    class_labels = None
-
-                # Predict the noise residual
-                model_pred = unet(
-                    noisy_model_input, timesteps, encoder_hidden_states, class_labels=class_labels
-                ).sample
-
-                if model_pred.shape[1] == 6:
-                    model_pred, _ = torch.chunk(model_pred, 2, dim=1)
-
-                # Get the target for loss depending on the prediction type
-                if noise_scheduler.config.prediction_type == "epsilon":
-                    target = noise
-                elif noise_scheduler.config.prediction_type == "v_prediction":
-                    target = noise_scheduler.get_velocity(model_input, noise, timesteps)
-                else:
-                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
-
-                if args.with_prior_preservation:
-                    # Chunk the noise and model_pred into two parts and compute the loss on each part separately.
-                    model_pred, model_pred_prior = torch.chunk(model_pred, 2, dim=0)
-                    target, target_prior = torch.chunk(target, 2, dim=0)
-                    # Compute prior loss
-                    prior_loss = F.mse_loss(model_pred_prior.float(), target_prior.float(), reduction="mean")
-
-                # Compute instance loss
-                if args.snr_gamma is None:
-                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
-                else:
-                    # Compute loss-weights as per Section 3.4 of https://arxiv.org/abs/2303.09556.
-                    # Since we predict the noise instead of x_0, the original formulation is slightly changed.
-                    # This is discussed in Section 4.2 of the same paper.
-                    snr = compute_snr(noise_scheduler, timesteps)
-                    base_weight = (
-                            torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(dim=1)[0] / snr
-                    )
-
-                    if noise_scheduler.config.prediction_type == "v_prediction":
-                        # Velocity objective needs to be floored to an SNR weight of one.
-                        mse_loss_weights = base_weight + 1
-                    else:
-                        # Epsilon and sample both use the same loss weights.
-                        mse_loss_weights = base_weight
-                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
-                    loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
-                    loss = loss.mean()
-
-                if args.with_prior_preservation:
-                    # Add the prior loss to the instance loss.
-                    loss = loss + args.prior_loss_weight * prior_loss
-
-                accelerator.backward(loss)
-                if accelerator.sync_gradients:
-                    params_to_clip = (
-                        itertools.chain(unet.parameters(), text_encoder.parameters())
-                        if args.train_text_encoder
-                        else unet.parameters()
-                    )
-                    accelerator.clip_grad_norm_(params_to_clip, args.max_grad_norm)
-                optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad(set_to_none=args.set_grads_to_none)
-
-            # Checks if the accelerator has performed an optimization step behind the scenes
-            if accelerator.sync_gradients:
-                progress_bar.update(1)
-                global_step += 1
-
-                if accelerator.is_main_process:
-                    if global_step % args.checkpointing_steps == 0:
-                        save_checkpoint(args,
-                                        accelerator,
-                                        global_step,
-                                        logger=logger)
-
-                    if global_step % args.validation_steps == 0:
-                        log_validation(
-                            text_encoder,
-                            tokenizer,
-                            unet,
-                            vae,
-                            args,
-                            accelerator,
-                            weight_dtype,
-                            global_step,
-                            validation_prompt_encoder_hidden_states,
-                            validation_prompt_negative_prompt_embeds,
-                            logger,
-                        )
-
-            if args.device_index is not None:
-                k = 1024
-                g = k * k * k
-                # free, total = torch.cuda.mem_get_info(args.device_index)
-                # occupied = total - free
-                # occupied_gb = occupied / g
-                reserved = torch.cuda.memory_reserved(args.device_index)
-                reserved_gb = reserved / g
-            else:
-                # occupied_gb = 0.0
-                reserved_gb = 0.0
-            logs = {"loss": loss.detach().item(),
-                    "lr": lr_scheduler.get_last_lr()[0],
-                    # "gpu occupied": occupied_gb,
-                    "gpu-res": reserved_gb}
-            progress_bar.set_postfix(**logs)
-            accelerator.log(logs, step=global_step)
-
-            if global_step >= args.max_train_steps:
-                break
+    train_epochs(train_unet=True,
+                 train_te=args.train_text_encoder and not train_te_separately,
+                 optimizer=optimizer, lr_scheduler=lr_scheduler,
+                 **train_epochs_kwargs)
 
     # Create the pipeline using the trained modules and save it.
     accelerator.wait_for_everyone()
@@ -693,7 +569,7 @@ def main(args):
             f.write(args.instance_prompt)
         logger.info(f'done save_pretrained.')
 
-        image_args_list = log_test(pipeline, args, accelerator, global_step=global_step, logger=logger)
+        image_args_list = log_test(pipeline, args, accelerator, global_step=args.max_train_steps, logger=logger)
         logger.info(f'done log_test.')
 
         model_file = f'{args.model_output_dir}/model.safetensors'

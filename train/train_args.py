@@ -137,7 +137,6 @@ def parse_args(input_args=None):
         action="store_true",
         help="Whether to train the text encoder. If set, the text encoder should be float32 precision.",
     )
-    parser.add_argument("--train_text_encoder_ratio", type=float, help="training time for text encoder, 0-1")
     parser.add_argument(
         "--train_te_separately",
         action="store_true",
@@ -155,6 +154,12 @@ def parse_args(input_args=None):
         type=int,
         default=None,
         help="Total number of training steps to perform.  If provided, overrides num_train_epochs.",
+    )
+    parser.add_argument(
+        "--max_train_te_steps",
+        type=int,
+        default=None,
+        help="max train steps for text encoder, use with --train_te_separately"
     )
     parser.add_argument(
         "--checkpointing_steps",

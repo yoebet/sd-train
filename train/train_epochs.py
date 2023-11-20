@@ -22,22 +22,23 @@ def train_epochs(accelerator, args, first_epoch, global_step,
         raise Exception('no model to train')
 
     if train_unet and not train_te:
-        name_prefix = 'u'
+        sub_name = 'u'
     elif train_te and not train_unet:
-        name_prefix = 't'
+        sub_name = 't'
     else:
-        name_prefix = 's'
+        sub_name = 's'
     progress_bar = tqdm(
         range(0, max_train_steps),
         initial=global_step,
-        desc=f"{name_prefix}/Steps",
+        desc=f"Steps/{sub_name}",
         # Only show the progress bar once on each machine.
         disable=not accelerator.is_local_main_process,
     )
 
+    stop_te = False
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train(train_unet)
-        text_encoder.train(train_te)
+        text_encoder.train(train_te and not stop_te)
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(unet):
                 pixel_values = batch["pixel_values"].to(dtype=weight_dtype)
@@ -172,8 +173,14 @@ def train_epochs(accelerator, args, first_epoch, global_step,
                             validation_prompt_embeds,
                             validation_negative_prompt_embeds,
                             logger,
-                            dirname_prefix=name_prefix
+                            dirname_prefix=sub_name
                         )
+
+                if train_te and not stop_te and args.max_train_te_steps is not None:
+                    if global_step >= args.max_train_te_steps:
+                        stop_te = True
+                        text_encoder.eval()
+                        logger.info(f'stop training TE, {global_step=}')
 
             if args.device_index is not None:
                 k = 1024
@@ -186,14 +193,17 @@ def train_epochs(accelerator, args, first_epoch, global_step,
             else:
                 # occupied_gb = 0.0
                 reserved_gb = 0.0
-            logs = {f"{name_prefix}-loss": loss.detach().item(),
-                    f"{name_prefix}-lr": lr_scheduler.get_last_lr()[0],
-                    # "gpu occupied": occupied_gb,
-                    f"{name_prefix}-gpu-res": reserved_gb}
+            logs = {f"loss/{sub_name}": loss.detach().item(),
+                    f"lr/{sub_name}": lr_scheduler.get_last_lr()[0],
+                    # f"gpu-occupied/{sub_name}": occupied_gb,
+                    f"gpu-res/{sub_name}": reserved_gb}
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 
             if global_step >= max_train_steps:
+                break
+
+            if not train_unet and stop_te:
                 break
 
     return {'global_step': global_step}

@@ -107,7 +107,7 @@ def log_validation(
         image.save(f'{output_dir}/{i + 1}.png')
 
     for tracker in accelerator.trackers:
-        val_name=f'{dirname_prefix}-validation'
+        val_name=f'validation/{dirname_prefix}'
         if tracker.name == "tensorboard":
             np_images = np.stack([np.asarray(img) for img in images])
             tracker.writer.add_images(val_name, np_images, global_step, dataformats="NHWC")

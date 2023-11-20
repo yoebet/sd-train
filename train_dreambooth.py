@@ -366,8 +366,8 @@ def main(args):
          validation_prompt_embeds,
          validation_negative_prompt_embeds,
          class_prompt_encoder_hidden_states) = pre_compute_text_embeddings(args,
-                                                                                        text_encoder,
-                                                                                        tokenizer)
+                                                                           text_encoder,
+                                                                           tokenizer)
         text_encoder = None
         tokenizer = None
 
@@ -519,14 +519,19 @@ def main(args):
                            'logger': logger
                            }
     if train_te_separately:
+        max_train_steps = args.max_train_steps
+        if args.train_text_encoder_ratio is not None:
+            max_train_steps = max_train_steps * args.train_text_encoder_ratio
         train_epochs(train_unet=False, train_te=True,
                      optimizer=optimizer_te, lr_scheduler=lr_scheduler_te,
+                     max_train_steps=max_train_steps,
                      **train_epochs_kwargs)
         logger.info(f'done training text encoder')
 
     train_epochs(train_unet=True,
                  train_te=args.train_text_encoder and not train_te_separately,
                  optimizer=optimizer, lr_scheduler=lr_scheduler,
+                 max_train_steps=args.max_train_steps,
                  **train_epochs_kwargs)
 
     # Create the pipeline using the trained modules and save it.

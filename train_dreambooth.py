@@ -521,7 +521,7 @@ def main(args):
     if train_te_separately:
         max_train_steps = args.max_train_steps
         if args.train_text_encoder_ratio is not None:
-            max_train_steps = max_train_steps * args.train_text_encoder_ratio
+            max_train_steps = int(max_train_steps * args.train_text_encoder_ratio)
         train_epochs(train_unet=False, train_te=True,
                      optimizer=optimizer_te, lr_scheduler=lr_scheduler_te,
                      max_train_steps=max_train_steps,

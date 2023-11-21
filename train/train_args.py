@@ -414,6 +414,12 @@ def parse_args(input_args=None):
         choices=["DPMSolverMultistepScheduler", "DDPMScheduler"],
         help="Select which scheduler to use for validation. DDPMScheduler is recommended for DeepFloyd IF.",
     )
+    parser.add_argument(
+        "--custom_pipeline",
+        required=False,
+        default=None,
+        help="custom pipeline",
+    )
     # parser.add_argument("--launch_method", type=str, default=None, help="accelerate/python")
     parser.add_argument("--device_index", type=int, default=None, help="device index")
 

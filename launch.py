@@ -168,6 +168,7 @@ def launch(config, task, launch_options, train_params, logger=None):
             train_params['hub_token'] = config.get('HF_HUB_TOKEN', None)
 
     train_params['hf_alt_dir'] = f'{data_base_dir}/hf-alt'
+    train_params['custom_pipeline'] = f'./community/lpw_stable_diffusion'
 
     device_index = launch_options.get('device_index', None)
 

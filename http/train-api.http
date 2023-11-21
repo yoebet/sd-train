@@ -174,7 +174,7 @@ Authorization: {{auth}}
 
 {
   "task": {
-    "task_id": "bbb",
+    "task_id": "ccc",
     "sub_dir": "test",
     "train_type": "live",
     "instance_images": [
@@ -197,8 +197,7 @@ Authorization: {{auth}}
     "base_model_name": "stable-diffusion-v1-5",
     "class_prompt": "a photo of a man",
     "instance_prompt": "a photo of a <sks> man",
-    "max_train_steps": 4,
-    "train_text_encoder_ratio": 0.5,
+    "max_train_steps": 2,
     "learning_rate": "2e-6",
     "with_prior_preservation": true,
     "num_class_images": 2,

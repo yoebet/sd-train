@@ -85,7 +85,7 @@ def main(args):
             {'prompt': args.instance_prompt,
              'negative_prompt': ''}
         ]
-    args.custom_pipeline = "lpw_stable_diffusion"
+    # args.custom_pipeline = "lpw_stable_diffusion"
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir,
                                                       logging_dir=args.logging_dir)

@@ -54,6 +54,7 @@ def log_validation(
         revision=args.revision,
         torch_dtype=weight_dtype,
         custom_pipeline=args.custom_pipeline,
+        local_files_only=True,
         **pipeline_args,
     )
 

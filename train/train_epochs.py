@@ -140,7 +140,7 @@ def train_epochs(accelerator, args, first_epoch, global_step,
                 if accelerator.sync_gradients:
                     params_to_clip = (
                         itertools.chain(unet.parameters(), text_encoder.parameters())
-                        if args.train_text_encoder
+                        if train_te and not stop_te
                         else unet.parameters()
                     )
                     accelerator.clip_grad_norm_(params_to_clip, args.max_grad_norm)

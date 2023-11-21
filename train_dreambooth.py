@@ -435,7 +435,7 @@ def main(args):
     )
     # Prepare everything with our `accelerator`.
     if args.train_text_encoder:
-        (text_encoder,) = accelerator.prepare(text_encoder)
+        text_encoder = accelerator.prepare(text_encoder)
         if train_te_separately:
             optimizer_te, lr_scheduler_te = accelerator.prepare(
                 optimizer_te, lr_scheduler_te

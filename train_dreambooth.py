@@ -338,10 +338,10 @@ def main(args):
     train_te_separately = args.train_text_encoder and args.train_te_separately and args.learning_rate_te is not None
 
     # Optimizer creation
-    params_to_optimize = (
-        itertools.chain(unet.parameters(),
-                        text_encoder.parameters()) if train_te_separately else unet.parameters()
-    )
+    if not args.train_text_encoder or train_te_separately:
+        params_to_optimize = unet.parameters()
+    else:
+        params_to_optimize = itertools.chain(unet.parameters(), text_encoder.parameters())
     optimizer = optimizer_class(
         params_to_optimize,
         lr=args.learning_rate,
@@ -430,20 +430,16 @@ def main(args):
     else:
         lr_scheduler_te = None
 
+    unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+        unet, optimizer, train_dataloader, lr_scheduler
+    )
     # Prepare everything with our `accelerator`.
     if args.train_text_encoder:
+        (text_encoder,) = accelerator.prepare(text_encoder)
         if train_te_separately:
-            unet, text_encoder, optimizer, optimizer_te, train_dataloader, lr_scheduler, lr_scheduler_te = accelerator.prepare(
-                unet, text_encoder, optimizer, optimizer_te, train_dataloader, lr_scheduler, lr_scheduler_te
+            optimizer_te, lr_scheduler_te = accelerator.prepare(
+                optimizer_te, lr_scheduler_te
             )
-        else:
-            unet, text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-                unet, text_encoder, optimizer, train_dataloader, lr_scheduler
-            )
-    else:
-        unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-            unet, optimizer, train_dataloader, lr_scheduler
-        )
 
     # For mixed precision training we cast all non-trainable weights (vae, non-lora text_encoder and non-lora unet) to half-precision
     # as these weights are only used for inference, keeping weights in full precision is not required.
@@ -526,6 +522,8 @@ def main(args):
                      optimizer=optimizer_te, lr_scheduler=lr_scheduler_te,
                      max_train_steps=max_train_steps,
                      **train_epochs_kwargs)
+        del optimizer_te
+        del lr_scheduler_te
         logger.info(f'done training text encoder')
 
     train_epochs(train_unet=True,

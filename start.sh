@@ -8,5 +8,5 @@ if [ -f "./venv/bin/activate" ]; then
 elif [ -f "../venv/bin/activate" ]; then
     source ../venv/bin/activate
 fi
-nohup gunicorn -w 3 --log-level debug -b 0.0.0.0:8005 "app:get()" &
+nohup gunicorn -w 3 --log-level debug --timeout 120 -b 0.0.0.0:8005 "app:get()" &
 

@@ -139,8 +139,8 @@ def launch_task():
 
 
 def check_train_dirs(task_id, dir_names, sub_dir=None):
-    data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
+    train_dir = get_train_dir(TRAIN_DATA_DIR, task_id, sub_dir=sub_dir)
     if not os.path.exists(train_dir):
         return False
     return all([os.path.exists(f'{train_dir}/{dir}') for dir in dir_names])
@@ -234,8 +234,8 @@ def prepare_base_hf():
 
 @app.route('/task/<task_id>/<sub_dir>/test_images', methods=('GET',))
 def list_test_images(task_id, sub_dir):
-    data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
+    train_dir = get_train_dir(TRAIN_DATA_DIR, task_id, sub_dir=sub_dir)
     test_output_dir = f'{train_dir}/test'
     if not os.path.isdir(test_output_dir):
         return jsonify({
@@ -253,8 +253,8 @@ def list_test_images(task_id, sub_dir):
 
 @app.route('/task/<task_id>/<sub_dir>/test_images/<filename>', methods=('GET',))
 def get_test_image_file(task_id, sub_dir, filename):
-    data_base_dir = app.config['DATA_BASE_DIR']
-    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
+    train_dir = get_train_dir(TRAIN_DATA_DIR, task_id, sub_dir=sub_dir)
     image_path = f'{train_dir}/test/{filename}'
     return send_file(image_path)
 
@@ -271,10 +271,10 @@ def release_model(task_id):
         else:
             target_model_name = f't_{task_id}'
 
-    data_base_dir = app.config['DATA_BASE_DIR']
-    checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
+    checkpoints_base_dir = f'{TRAIN_DATA_DIR}/sd-models/models/Stable-diffusion'
 
-    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
+    train_dir = get_train_dir(TRAIN_DATA_DIR, task_id, sub_dir=sub_dir)
 
     model_file = f'{train_dir}/model/model.safetensors'
     if not os.path.isfile(model_file):
@@ -291,7 +291,7 @@ def release_model(task_id):
         logger.warning(f'model file overwritten: {target_file_name}')
 
     try:
-        sync_file(data_base_dir, target_file_name, logger=logger)
+        sync_file(TRAIN_DATA_DIR, target_file_name, logger=logger)
     except Exception as e:
         logger.error(e)
 
@@ -311,8 +311,8 @@ def undo_release_model(task_id):
         else:
             target_model_name = f't_{task_id}'
 
-    data_base_dir = app.config['DATA_BASE_DIR']
-    checkpoints_base_dir = f'{data_base_dir}/sd-models/models/Stable-diffusion'
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
+    checkpoints_base_dir = f'{TRAIN_DATA_DIR}/sd-models/models/Stable-diffusion'
 
     target_file_name = f'{target_model_name}.safetensors'
     target_model_file = f'{checkpoints_base_dir}/{target_file_name}'
@@ -328,13 +328,13 @@ def undo_release_model(task_id):
 @app.route('/sync-checkpoint', methods=('POST',))
 def sync_model():
     req = request.get_json()
-    data_base_dir = app.config['DATA_BASE_DIR']
+    TRAIN_DATA_DIR = app.config['TRAIN_DATA_DIR']
     target_file_name = req.get('model_file')
     if '.' not in target_file_name:
         target_file_name = f'{target_file_name}.safetensors'
 
     try:
-        pid = sync_file(data_base_dir, target_file_name, logger=logger)
+        pid = sync_file(TRAIN_DATA_DIR, target_file_name, logger=logger)
     except Exception as e:
         logger.error(e)
         return jsonify({
@@ -358,12 +358,12 @@ def check_tokens():
     if text is None:
         raise Exception('missing `text` parameter')
 
-    data_base_dir = app.config['DATA_BASE_DIR']
+    CONFIG_DIR = app.config['CONFIG_DIR']
     global tokenizer
     if tokenizer is None:
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(
-            f'{data_base_dir}/hf-alt/tokenizer',
+            f'{CONFIG_DIR}/hf-alt/tokenizer',
             local_files_only=True
         )
     t = tokenizer

@@ -40,7 +40,7 @@ def build_args(args_map, shell=False):
     return args
 
 
-def locate_base_model(train_params, data_base_dir, logger=None):
+def locate_base_model(train_params, config_dir, data_base_dir, logger=None):
     base_model_name = train_params.get('base_model_name', None)
     if base_model_name is None:
         raise Exception('missing base_model_name')
@@ -60,7 +60,7 @@ def locate_base_model(train_params, data_base_dir, logger=None):
         train_params['pretrained_model_name_or_path'] = pretrained_base_model
         return
 
-    sd_config_file = f'{data_base_dir}/sd-configs/v1-inference.yaml'
+    sd_config_file = f'{config_dir}/sd-configs/v1-inference.yaml'
     if os.path.exists(sd_config_file):
         train_params['base_model_config_file'] = sd_config_file
 
@@ -81,7 +81,7 @@ def locate_base_model(train_params, data_base_dir, logger=None):
             return
 
 
-def determine_class_data_dir(train_params, data_base_dir, logger=None):
+def determine_class_data_dir(train_params, data_base_dir):
     base_model_name = train_params.get('base_model_name', None)
     if not train_params.get('with_prior_preservation', False):
         return
@@ -103,6 +103,7 @@ def launch(config, task, launch_options, train_params, logger=None):
     if logger is None:
         logger = logging.getLogger('launch')
 
+    config_dir = config['CONFIG_DIR']
     data_base_dir = config['DATA_BASE_DIR']
     accelerate_config_file = config.get('ACCELERATE_CONFIG', None)
     launch_script_dir = config.get('LAUNCH_SCRIPT_DIR', '.')
@@ -119,9 +120,9 @@ def launch(config, task, launch_options, train_params, logger=None):
         task_id = str(int(time.time()))
     train_params["task_id"] = task_id
 
-    locate_base_model(train_params, data_base_dir, logger=logger)
+    locate_base_model(train_params, config_dir, data_base_dir, logger=logger)
 
-    prompts_dir = f'{data_base_dir}/prompts'
+    prompts_dir = f'{config_dir}/prompts'
     train_type = task.get('train_type', None)
     if train_type == 'live':
         test_prompts_file = f'{prompts_dir}/test_prompts_live.json'
@@ -167,7 +168,7 @@ def launch(config, task, launch_options, train_params, logger=None):
         if ht is None or ht == '':
             train_params['hub_token'] = config.get('HF_HUB_TOKEN', None)
 
-    train_params['hf_alt_dir'] = f'{data_base_dir}/hf-alt'
+    train_params['hf_alt_dir'] = f'{config_dir}/hf-alt'
     train_params['custom_pipeline'] = f'./community/lpw_stable_diffusion'
 
     device_index = launch_options.get('device_index', None)
@@ -197,7 +198,7 @@ def launch(config, task, launch_options, train_params, logger=None):
             accelerate_args = build_args(accelerate_params, shell=shell)
 
         if accelerate_config_file is not None:
-            acf = pathlib.Path(f'{data_base_dir}/hf-accelerate', accelerate_config_file)
+            acf = pathlib.Path(f'{config_dir}/hf-accelerate', accelerate_config_file)
             accelerate_args.insert(0, f'--config_file={str(acf)}')
 
         args = ['accelerate', 'launch'] + accelerate_args + [script_file] + train_args

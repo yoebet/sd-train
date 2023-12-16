@@ -19,7 +19,7 @@ def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
     if logger is None:
         logger = logging.getLogger('prepare')
 
-    data_base_dir = config['DATA_BASE_DIR']
+    data_base_dir = config['TRAIN_DATA_DIR']
     task_id = task.get('task_id', None)
     if task_id is None:
         task_id = str(int(time.time()))
@@ -29,14 +29,7 @@ def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
         return {'task_id': task_id}
 
     sub_dir = task.get('sub_dir', None)
-    if sub_dir == '_':
-        sub_dir = None
-
-    trains_dir = f'{data_base_dir}/trains'
-    if sub_dir is not None:
-        train_dir = f'{trains_dir}/{sub_dir}/t_{task_id}'
-    else:
-        train_dir = f'{trains_dir}/t_{task_id}'
+    train_dir = get_train_dir(data_base_dir, task_id, sub_dir=sub_dir)
     instance_data_dir = f'{train_dir}/instance_images'
 
     if os.path.exists(instance_data_dir):
@@ -44,7 +37,7 @@ def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
             files = os.listdir(instance_data_dir)
             files = [f for f in files if re.match(r'\d+-', f)]
             if len(files) == len(instance_images):
-                logger.info(f'instance_images exists, skip')
+                logger.info(f'instance images exists, skip')
                 return {'task_id': task_id}
 
         shutil.rmtree(instance_data_dir)
@@ -77,7 +70,7 @@ def prepare_instance_images(config, task, skip_if_exists=False, logger=None):
 
 if __name__ == '__main__':
     config = {
-        'DATA_BASE_DIR': 'data'
+        'TRAIN_DATA_DIR': 'data'
     }
     task = {
         'task_id': '134',
